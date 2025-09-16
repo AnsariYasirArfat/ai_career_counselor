@@ -131,6 +131,7 @@ export default function ChatRoomList({
                   className={`flex-1 block p-1 cursor-pointer transition truncate whitespace-nowrap ${
                     isActive ? "font-semibold" : ""
                   }`}
+                  title={room.title}
                 >
                   {room.title}
                 </Link>
