@@ -13,6 +13,7 @@ model ChatSession {
   title     String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
   message   Message[]
 
   @@map("chat_sessions")

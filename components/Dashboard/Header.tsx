@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import UserMenu from "./UserMenu";
-import { useAppSelector } from "@/store/hook";
 import Image from "next/image";
 import DrawerSidebar from "./DrawerSidebar";
 import { Skeleton } from "@/components/ui/skeleton";

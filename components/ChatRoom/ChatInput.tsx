@@ -88,9 +88,9 @@ export default function ChatInput({ onSend, loading }: ChatInputProps) {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-full hover:!bg-zinc-400/50 transition-colors"
-              title="Upload image"
-              disabled={loading}
+              className="p-2 rounded-full hover:!bg-zinc-400/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Image upload coming soon"
+              disabled={true}
             >
               <Paperclip size={20} className="text-zinc-400" />
             </button>
@@ -101,6 +101,7 @@ export default function ChatInput({ onSend, loading }: ChatInputProps) {
               ref={fileInputRef}
               className="hidden"
               onChange={handleFileChange}
+              disabled={true}
             />
             
             <Button
