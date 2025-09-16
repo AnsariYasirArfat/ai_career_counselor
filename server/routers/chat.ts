@@ -219,7 +219,7 @@ export const chatRouter = router({
         let aiText: string;
         try {
           aiText = await generateCareerReply(
-            recent.map((m) => ({
+            recent.map((m:any) => ({
               role: m.role as "USER" | "ASSISTANT",
               content: m.content,
             }))
