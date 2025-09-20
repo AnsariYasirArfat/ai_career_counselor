@@ -1,4 +1,6 @@
-export default function SpinnerLoader({ className = "h-5 w-5 mr-2" }: { className?: string }) {
+export default function SpinnerLoader({
+  className = "h-5 w-5 mr-2",
+}: Readonly<{ className?: string }>) {
   return (
     <svg
       className={`animate-spin ${className}`}
