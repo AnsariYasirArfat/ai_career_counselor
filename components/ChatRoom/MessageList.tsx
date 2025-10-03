@@ -1,8 +1,9 @@
 "use client";
-import { Copy } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Check, Copy, icons } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
-import { MarkdownRenderer } from './MarkdownRenderer';
+import { MarkdownRenderer } from "./MarkdownRenderer";
+import { Button } from "../ui/button";
 
 type ChatMessage = {
   id: string;
@@ -13,16 +14,14 @@ type ChatMessage = {
 
 interface MessageListProps {
   messages: ChatMessage[];
-  onCopy: (text: string) => void;
   loadMore: () => void;
   hasMore: boolean;
   isLoading: boolean;
-  shouldScrollToBottom?: boolean; 
+  shouldScrollToBottom?: boolean;
 }
 
 export default function MessageList({
   messages,
-  onCopy,
   loadMore,
   hasMore,
   isLoading,
@@ -30,6 +29,7 @@ export default function MessageList({
 }: MessageListProps) {
   const SCROLLABLE_ID = "chat-message-scrollable";
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (shouldScrollToBottom && scrollRef.current) {
@@ -39,6 +39,14 @@ export default function MessageList({
       });
     }
   }, [shouldScrollToBottom, messages]);
+
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => {
+      setCopiedId(null);
+    }, 1200);
+  };
 
   return (
     <div
@@ -89,13 +97,20 @@ export default function MessageList({
                 <span className="text-xs text-gray-400">
                   {new Date(msg.createdAt).toLocaleTimeString()}
                 </span>
-                <button
-                  className="ml-2 p-1 rounded hover:!bg-zinc-400/50 transition"
-                  onClick={() => onCopy(msg.content)}
+                <Button
+                  size={"icon"}
+                  variant={"ghost"}
+                  className="ml-2 rounded transition"
+                  onClick={() => handleCopy(msg.id, msg.content)}
                   title="Copy to clipboard"
+                  disabled={copiedId === msg.id}
                 >
-                  <Copy size={16} />
-                </button>
+                  {copiedId === msg.id ? (
+                    <Check size={12}/>
+                  ) : (
+                    <Copy size={12} />
+                  )}
+                </Button>
               </div>
             </div>
           </div>

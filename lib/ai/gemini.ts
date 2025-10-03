@@ -7,24 +7,29 @@ export type PlainMessage = {
   content: string;
 };
 
-const DEFAULT_MODEL = process.env.AI_MODEL || "gemini-1.5-flash";
-const TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS || 20000);
+const DEFAULT_MODEL = process.env.AI_MODEL;
 
 const SYSTEM_PROMPT = `
-You are an expert, empathetic career counselor AI assistant.
-- Give clear, actionable guidance on careers, skills, learning paths, and job search strategies.
-- Ask clarifying questions when details are missing.
-- Keep answers concise and practical.
+You are an empathetic career counselor and coach.
+
+- Ask clarifying questions about the user’s background (education, skills, experience, interests, goals).  
+- Suggest multiple career paths aligned with their strengths, with clear next steps (skills, certifications, projects, experiences).  
+- Give practical job search support: resume/CV tips, portfolio, interview prep, networking.  
+- Share realistic insights: industry trends, demand, salaries, challenges, trade-offs.  
+- Communicate in a friendly, motivating, and clear tone; use bullets or step-by-step guidance.  
+
+If the user asks non-career questions, politely decline and redirect back to careers.  
+Always ask for missing info before giving broad advice.  
 `;
 
 export async function generateCareerReply(
   messages: PlainMessage[],
-  modelName: string = DEFAULT_MODEL
+  modelName: string = DEFAULT_MODEL!
 ): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is missing");
 
-  const MAX_CHARS = 8000;
+  const MAX_CHARS = 50000;
   let acc = 0;
   const recent = [];
   for (let i = messages.length - 1; i >= 0; i--) {
@@ -36,6 +41,7 @@ export async function generateCareerReply(
   recent.reverse();
 
   const genAI = new GoogleGenerativeAI(apiKey);
+
   const model = genAI.getGenerativeModel({
     model: modelName,
     systemInstruction: {
@@ -49,20 +55,15 @@ export async function generateCareerReply(
     parts: [{ text: m.content }],
   }));
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
   try {
-    const result = await model.generateContent(
-      { contents },
-      { signal: controller.signal as any }
-    );
+    const result = await model.generateContent({ contents });
     const text = result?.response?.text?.() || "";
     return (
       text.trim() ||
       "I’m here to help. Could you share a bit more about your goals or current situation?"
     );
-  } finally {
-    clearTimeout(timeout);
+  } catch (e) {
+    console.error("AI Generation failed:", e);
+    throw new Error("AI service temporarily unavailable. Please try again.");
   }
 }

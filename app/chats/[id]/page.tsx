@@ -1,19 +1,19 @@
 "use client";
 import { useParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import MessageList from "@/components/ChatRoom/MessageList";
 import ChatInput from "@/components/ChatRoom/ChatInput";
-import { toast } from "sonner";
 import Link from "next/link";
 import TypingIndicator from "@/components/ChatRoom/TypingIndicator";
 import ChatRoomSkeleton from "@/components/ChatRoom/ChatRoomSkeleton";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, AlertCircle, RefreshCw } from "lucide-react";
 import { useTRPC, useTRPCClient } from "@/app/_trpc/client";
 import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 
 const PAGE_SIZE = 10;
 
@@ -23,11 +23,13 @@ export default function ChatRoomPage() {
   const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
 
+  const [failedUserText, setFailedUserText] = useState<string | null>(null);
+  const [failedAiId, setFailedAiId] = useState<string | null>(null);
+  const lastTempUserIdRef = useRef<string | null>(null);
+
   const messagesListOpts = trpc.chat.getMessages.infiniteQueryOptions(
     { sessionId: id, limit: PAGE_SIZE, cursor: undefined },
-    {
-      getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    }
+    { getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined }
   );
   const messagesListKey = messagesListOpts.queryKey;
 
@@ -52,20 +54,44 @@ export default function ChatRoomPage() {
     [data]
   );
 
+  const insertFailedAiPlaceholder = (text: string) => {
+    const idFail = `temp-ai-failed-${Date.now()}`;
+    setFailedAiId(idFail);
+  };
+
+  const removeFailedAiPlaceholder = () => {
+    if (!failedAiId) return;
+    const idFail = failedAiId;
+    setFailedAiId(null);
+    queryClient.setQueryData(messagesListKey, (old: any) => {
+      if (!old) return old;
+      const pages = old.pages.map((p: any) => {
+        const next = (p.messages ?? []).filter((m: any) => m.id !== idFail);
+        return { ...p, messages: next };
+      });
+      return { ...old, pages };
+    });
+  };
+
   const sendMutation = useMutation({
     mutationFn: (content: string) =>
       trpcClient.chat.sendMessage.mutate({ sessionId: id, content }),
 
     onMutate: async (content) => {
       await queryClient.cancelQueries({ queryKey: messagesListKey });
+      setFailedUserText(null);
+      removeFailedAiPlaceholder();
 
       const previous = queryClient.getQueryData(messagesListKey);
 
+      const tmpUserId = `temp-user-${Date.now()}`;
+      lastTempUserIdRef.current = tmpUserId;
+
       const tempUserMessage = {
-        id: `temp-user-${Date.now()}`,
+        id: tmpUserId,
         sessionId: id,
         role: "USER" as const,
-        content: content,
+        content,
         createdAt: new Date().toISOString(),
       };
 
@@ -83,26 +109,20 @@ export default function ChatRoomPage() {
     },
 
     onSuccess: async ({ userMessage, aiMessage }, _vars, context) => {
+      setFailedUserText(null);
+      removeFailedAiPlaceholder();
+
       queryClient.setQueryData(messagesListKey, (old: any) => {
         if (!old) return old;
         const pages = old.pages.map((p: any, idx: number) => {
           if (idx !== 0) return p;
-          
           const withoutTemp = (p.messages ?? []).filter(
-            (m: any) => m.id !== context?.tempUserMessage?.id
+            (m: any) =>
+              m.id !== context?.tempUserMessage?.id && m.id !== failedAiId
           );
-          
           const next = [aiMessage, userMessage, ...withoutTemp];
-          
-          const seen = new Set<string>();
-          const deduped = [];
-          for (const m of next) {
-            if (!m?.id || seen.has(m.id)) continue;
-            seen.add(m.id);
-            deduped.push(m);
-          }
-          
-          return { ...p, messages: deduped };
+
+          return { ...p, messages: next };
         });
         return { ...old, pages };
       });
@@ -129,27 +149,81 @@ export default function ChatRoomPage() {
     },
 
     onError: (_err, _vars, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(messagesListKey, context.previous);
-      }
-      toast.error("Failed to send message");
+      setFailedUserText(context?.tempUserMessage?.content || null);
+      insertFailedAiPlaceholder(context?.tempUserMessage?.content || "");
+    },
+  });
+
+  const retryMutation = useMutation({
+    mutationFn: (content: string) =>
+      trpcClient.chat.sendMessage.mutate({ sessionId: id, content }),
+
+    onMutate: async () => {
+      removeFailedAiPlaceholder();
+    },
+
+    onSuccess: async ({ userMessage, aiMessage }) => {
+      setFailedUserText(null);
+
+      const tmpId = lastTempUserIdRef.current;
+      queryClient.setQueryData(messagesListKey, (old: any) => {
+        if (!old) return old;
+        const pages = old.pages.map((p: any, idx: number) => {
+          if (idx !== 0) return p;
+          const withoutTemp = (p.messages ?? []).filter(
+            (m: any) => m.id !== tmpId
+          );
+          const next = [aiMessage, userMessage, ...withoutTemp];
+
+          return { ...p, messages: next };
+        });
+        return { ...old, pages };
+      });
+
+      queryClient.setQueryData(sessionsListKey, (old: any) => {
+        if (!old) return old;
+        const pages = old.pages.map((p: any, idx: number) => {
+          if (idx !== 0) return p;
+          const list = p.sessions ?? [];
+          const index = list.findIndex((s: any) => s.id === id);
+          if (index === -1) return p;
+
+          const current = list[index];
+          const updated = {
+            ...current,
+            updatedAt: aiMessage.createdAt ?? new Date().toISOString(),
+            message: [{ ...aiMessage }],
+          };
+          const without = list.filter((_: any, i: number) => i !== index);
+          return { ...p, sessions: [updated, ...without] };
+        });
+        return { ...old, pages };
+      });
+    },
+
+    onError: () => {
+      insertFailedAiPlaceholder(failedUserText || "");
     },
   });
 
   const handleSend = (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed || sendMutation.isPending) return;
+    if (!trimmed || sendMutation.isPending || retryMutation.isPending) return;
     sendMutation.mutate(trimmed);
   };
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard!");
+  const handleRetry = () => {
+    if (!failedUserText || sendMutation.isPending || retryMutation.isPending)
+      return;
+    retryMutation.mutate(failedUserText);
   };
+
+
 
   if (isLoading) {
     return <ChatRoomSkeleton />;
   }
+
   if (status === "error") {
     return (
       <div className="flex flex-col items-center justify-center h-full py-16">
@@ -167,6 +241,7 @@ export default function ChatRoomPage() {
   }
 
   const hasAny = messages.length > 0;
+  const isProcessing = sendMutation.isPending || retryMutation.isPending;
 
   return (
     <div className="flex flex-col flex-1 h-full min-h-0">
@@ -179,7 +254,6 @@ export default function ChatRoomPage() {
               content: m.content,
               createdAt: m.createdAt,
             }))}
-            onCopy={handleCopy}
             loadMore={fetchNextPage}
             hasMore={!!hasNextPage}
             isLoading={isFetchingNextPage}
@@ -194,14 +268,43 @@ export default function ChatRoomPage() {
           </div>
         )}
 
-        {sendMutation.isPending && (
+        {failedUserText && !isProcessing && (
+          <div className="pb-1 max-w-[760px] w-full mx-auto">
+            <div className="flex items-center gap-3 px-5 py-3  max-w-[80%] border border-red-500  rounded-3xl rounded-tl-md">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-red-500">
+                  Failed to get AI response
+                </div>
+                <span className="text-xs text-gray-400">
+                  {new Date().toLocaleTimeString()}
+                </span>
+              </div>
+
+              <Button
+                variant="destructive"
+                onClick={handleRetry}
+                disabled={isProcessing}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm  rounded-md transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Retry
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {isProcessing && (
           <div className="pb-1 max-w-[760px] w-full mx-auto">
             <TypingIndicator text="thinking" />
           </div>
         )}
       </div>
 
-      <ChatInput onSend={handleSend} loading={sendMutation.isPending} />
+      <ChatInput
+        onSend={handleSend}
+        loading={!!failedUserText || isProcessing}
+      />
     </div>
   );
 }
