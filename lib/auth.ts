@@ -11,6 +11,7 @@ const adapter = PrismaAdapter(prisma);
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: adapter,
+  secret: process.env.AUTH_SECRET,
   providers: [
     Google,
     Credentials({
