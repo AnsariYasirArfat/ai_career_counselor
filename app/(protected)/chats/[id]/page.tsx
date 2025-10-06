@@ -226,7 +226,7 @@ export default function ChatRoomPage() {
 
   if (status === "error") {
     return (
-      <div className="flex flex-col items-center justify-center h-full py-16">
+      <div className="flex flex-col items-center justify-center h-full py-16 w-full">
         <div className="text-2xl font-semibold text-gray-400 mb-4">
           Failed to load chatroom
         </div>
@@ -244,7 +244,7 @@ export default function ChatRoomPage() {
   const isProcessing = sendMutation.isPending || retryMutation.isPending;
 
   return (
-    <div className="flex flex-col flex-1 h-full min-h-0">
+    <div className="flex flex-col flex-1 h-full min-h-0 w-full">
       <div className="flex-1 min-h-0 flex flex-col px-4 ">
         {hasAny ? (
           <MessageList
@@ -259,7 +259,7 @@ export default function ChatRoomPage() {
             isLoading={isFetchingNextPage}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center flex-1 py-12 text-center text-zinc-500">
+          <div className="flex flex-col items-center justify-center flex-1 h-full  min-h-0 py-12 text-center text-zinc-500">
             <MessageCircle className="w-12 h-12 mb-4 text-zinc-400" />
             <div className="text-xl font-semibold mb-2">No messages yet</div>
             <div className="text-sm">

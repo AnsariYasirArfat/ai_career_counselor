@@ -11,18 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC, useTRPCClient } from "@/app/_trpc/client";
-
-const chatroomSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-});
-
-type ChatroomForm = z.infer<typeof chatroomSchema>;
-
+import { ChatroomForm, chatroomSchema } from "@/lib/validations";
+import { useSession } from "next-auth/react";
 interface NewChatModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -66,15 +60,17 @@ export default function NewChatModal({
       setOpen(false);
       if (closeDrawer) closeDrawer();
       router.push(`/chats/${session.id}`);
-
     },
 
-    onError: () => {
-      toast.error("Failed to create chatroom");
+    onError: (error) => {
+      toast.error(error.message || "Failed to create chatroom");
+      setOpen(false);
+      form.reset();
     },
   });
 
   const onSubmit = (data: ChatroomForm) => {
+    
     const title = data.title.trim();
     if (!title) return;
     createMutation.mutate(title);
