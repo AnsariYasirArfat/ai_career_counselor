@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Mail, Lock } from "lucide-react";
 import Link from "next/link";
 import { signinSchema, type SigninInput } from "@/lib/validations";
+import GoogleButton from "@/components/auth/GoogleButton";
 
 export default function SigninPage() {
   const [error, setError] = useState("");
@@ -58,10 +59,6 @@ export default function SigninPage() {
   };
   const isLoading = form.formState.isSubmitting;
 
-  const handleGoogleSignIn = async () => {
-    await signIn("google", { callbackUrl: "/" });
-  };
-
   return (
     <Card>
       <CardHeader className="space-y-1">
@@ -81,15 +78,11 @@ export default function SigninPage() {
         )}
 
         {/* Google Sign In Button */}
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={handleGoogleSignIn}
+        <GoogleButton
+          text="Continue with Google"
+          callbackUrl="/"
           disabled={isLoading}
-        >
-          Continue with Google
-        </Button>
+        />
 
         {/* Divider */}
         <div className="relative">

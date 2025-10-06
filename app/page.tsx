@@ -2,12 +2,7 @@
 import { useState, useEffect } from "react";
 import NewChatModal from "@/components/Dashboard/NewChatModal";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowRight,
-  MessageCircle,
-  Shield,
-  Zap,
-} from "lucide-react";
+import { ArrowRight, MessageCircle, Shield, Zap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -38,11 +33,11 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center">
           {/* Hero Section */}
           <div className="mb-16">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+            <h1 className="text-xl sm:text-2xl  md:text-3xl xl:text-4xl font-bold text-gray-900 dark:text-white mb-6">
               Welcome to{" "}
               <span className="text-oration-orange">AI Career Counselor</span>
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
               Get personalized career guidance powered by AI. Explore
               opportunities, plan your growth, and make smarter career decisions
               with confidence.
