@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import AppShell from "@/components/common/AppShell";
 import TRPCQueryProvider from "@/components/providers/trpc-query-provider";
+import AuthProvider from "@/components/providers/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,17 +41,19 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <TRPCQueryProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <AppShell>{children}</AppShell>
-          </ThemeProvider>
-          <Toaster position="top-center" />
-        </TRPCQueryProvider>
+        <AuthProvider>
+          <TRPCQueryProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <AppShell>{children}</AppShell>
+            </ThemeProvider>
+            <Toaster position="top-center" />
+          </TRPCQueryProvider>
+        </AuthProvider>
       </body>
     </html>
   );

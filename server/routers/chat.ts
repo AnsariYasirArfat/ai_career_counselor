@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
+import { router, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import { generateCareerReply, PlainMessage } from "@/lib/ai/gemini";
 
 export const chatRouter = router({
-  getChatSessions: publicProcedure
+  getChatSessions: protectedProcedure
     .input(
       z.object({
         cursor: z.string().nullable(),
@@ -23,6 +23,7 @@ export const chatRouter = router({
           }),
           where: {
             deletedAt: null,
+            userId: ctx.user.id,
           },
           orderBy: { updatedAt: "desc" },
           include: {
@@ -51,7 +52,7 @@ export const chatRouter = router({
       }
     }),
 
-  searchChatSessions: publicProcedure
+  searchChatSessions: protectedProcedure
     .input(
       z.object({
         query: z.string().optional(),
@@ -67,6 +68,7 @@ export const chatRouter = router({
           take: limit + 1,
           ...(cursor && { cursor: { id: cursor }, skip: 1 }),
           where: {
+            userId: ctx.user.id,
             deletedAt: null,
             ...(query &&
               query.trim() && {
@@ -98,7 +100,7 @@ export const chatRouter = router({
       }
     }),
 
-  getMessages: publicProcedure
+  getMessages: protectedProcedure
     .input(
       z.object({
         sessionId: z.string(),
@@ -114,6 +116,7 @@ export const chatRouter = router({
           where: {
             id: sessionId,
             deletedAt: null,
+            userId: ctx.user.id,
           },
         });
 
@@ -155,13 +158,14 @@ export const chatRouter = router({
       }
     }),
 
-  createChatSession: publicProcedure
+  createChatSession: protectedProcedure
     .input(z.object({ title: z.string().min(1, "Title is required") }))
     .mutation(async ({ input, ctx }) => {
       try {
         const session = await ctx.prisma.chatSession.create({
           data: {
             title: input.title,
+            userId: ctx.user.id,
           },
         });
         return session;
@@ -173,7 +177,7 @@ export const chatRouter = router({
       }
     }),
 
-  sendMessage: publicProcedure
+  sendMessage: protectedProcedure
     .input(
       z.object({
         sessionId: z.string(),
@@ -186,6 +190,7 @@ export const chatRouter = router({
           where: {
             id: input.sessionId,
             deletedAt: null,
+            userId: ctx.user.id,
           },
         });
 
@@ -243,7 +248,7 @@ export const chatRouter = router({
         });
 
         await ctx.prisma.chatSession.update({
-          where: { id: input.sessionId },
+          where: { id: input.sessionId , userId: ctx.user.id},
           data: { updatedAt: new Date() },
         });
 
@@ -263,7 +268,7 @@ export const chatRouter = router({
       }
     }),
 
-  deleteChatSession: publicProcedure
+  deleteChatSession: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
@@ -271,6 +276,7 @@ export const chatRouter = router({
           where: {
             id: input.id,
             deletedAt: null,
+            userId: ctx.user.id,
           },
         });
 
@@ -282,7 +288,7 @@ export const chatRouter = router({
         }
 
         await ctx.prisma.chatSession.update({
-          where: { id: input.id },
+          where: { id: input.id , userId: ctx.user.id},
           data: { deletedAt: new Date() },
         });
 

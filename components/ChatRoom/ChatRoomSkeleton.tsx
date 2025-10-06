@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ChatRoomSkeleton() {
   return (
-    <div className="flex flex-col flex-1 h-full min-h-0 px-4">
+    <div className="flex flex-col flex-1 h-full min-h-0 px-4 w-full">
       <div className="flex-1 min-h-0 flex flex-col gap-4 max-w-[760px] mx-auto w-full py-6">
         {[...Array(5)].map((_, i) => (
           <div
