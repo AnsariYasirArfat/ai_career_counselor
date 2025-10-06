@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
-import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Mail, Lock, User } from "lucide-react";
@@ -20,6 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { signupSchema, type SignupInput } from "@/lib/validations";
+import GoogleButton from "@/components/auth/GoogleButton";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -49,10 +49,6 @@ export default function SignupPage() {
     registerMutation.mutate(registerData);
   };
 
-  const handleGoogleSignIn = async () => {
-    await signIn("google", { callbackUrl: "/" });
-  };
-
   const isLoading = registerMutation.isPending;
 
   return (
@@ -76,16 +72,11 @@ export default function SignupPage() {
           </Alert>
         )}
 
-        {/* Google Sign In Button */}
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={handleGoogleSignIn}
+        <GoogleButton
+          text="Continue with Google"
+          callbackUrl="/"
           disabled={isLoading}
-        >
-          Continue with Google
-        </Button>
+        />
 
         {/* Divider */}
         <div className="relative">
