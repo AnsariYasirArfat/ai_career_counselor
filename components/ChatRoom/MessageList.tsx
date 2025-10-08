@@ -1,6 +1,6 @@
 "use client";
-import { Check, Copy, icons } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Check, Copy } from "lucide-react";
+import { RefObject, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import { Button } from "../ui/button";
@@ -17,6 +17,7 @@ interface MessageListProps {
   loadMore: () => void;
   hasMore: boolean;
   isLoading: boolean;
+  scrollRef: RefObject<HTMLDivElement | null>;
 }
 
 export default function MessageList({
@@ -24,19 +25,10 @@ export default function MessageList({
   loadMore,
   hasMore,
   isLoading,
+  scrollRef,
 }: MessageListProps) {
   const SCROLLABLE_ID = "chat-message-scrollable";
-  const scrollRef = useRef<HTMLDivElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if ( scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    }
-  }, [ messages]);
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -104,7 +96,7 @@ export default function MessageList({
                   disabled={copiedId === msg.id}
                 >
                   {copiedId === msg.id ? (
-                    <Check size={12}/>
+                    <Check size={12} />
                   ) : (
                     <Copy size={12} />
                   )}

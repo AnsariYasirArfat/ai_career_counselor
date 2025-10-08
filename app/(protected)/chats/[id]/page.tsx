@@ -24,7 +24,6 @@ export default function ChatRoomPage() {
   const queryClient = useQueryClient();
 
   const [failedUserText, setFailedUserText] = useState<string | null>(null);
-  const lastTempUserIdRef = useRef<string | null>(null);
 
   const messagesListOpts = trpc.chat.getMessages.infiniteQueryOptions(
     { sessionId: id, limit: PAGE_SIZE, cursor: undefined },
@@ -38,6 +37,20 @@ export default function ChatRoomPage() {
     { getNextPageParam: (lastPage) => lastPage.nextCursor ?? null }
   );
   const sessionsListKey = sessionsListOpts.queryKey;
+
+  const lastTempUserIdRef = useRef<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollDown = () => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({
+          top: 0, 
+          behavior: "smooth",
+        });
+      });
+    });
+  };
 
   const {
     data,
@@ -59,7 +72,6 @@ export default function ChatRoomPage() {
 
     onMutate: async ({ content, isRetry }) => {
       await queryClient.cancelQueries({ queryKey: messagesListKey });
-
       if (!isRetry) {
         setFailedUserText(null);
         const previous = queryClient.getQueryData(messagesListKey);
@@ -84,6 +96,7 @@ export default function ChatRoomPage() {
           });
           return { ...old, pages };
         });
+        scrollDown();
 
         return { previous, tempUserMessage };
       }
@@ -92,7 +105,6 @@ export default function ChatRoomPage() {
 
     onSuccess: async ({ userMessage, aiMessage }, { isRetry }, context) => {
       setFailedUserText(null);
-
       const tmpMsgId = !isRetry
         ? context?.tempUserMessage?.id
         : lastTempUserIdRef.current;
@@ -130,6 +142,7 @@ export default function ChatRoomPage() {
         });
         return { ...old, pages };
       });
+      scrollDown();
     },
 
     onError: (_err, { isRetry }, context) => {
@@ -188,6 +201,7 @@ export default function ChatRoomPage() {
             loadMore={fetchNextPage}
             hasMore={!!hasNextPage}
             isLoading={isFetchingNextPage}
+            scrollRef={scrollRef}
           />
         ) : (
           <div className="flex flex-col items-center justify-center flex-1 h-full  min-h-0 py-12 text-center text-zinc-500">
