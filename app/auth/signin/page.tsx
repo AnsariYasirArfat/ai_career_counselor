@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Mail, Lock } from "lucide-react";
+import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { signinSchema, type SigninInput } from "@/lib/validations";
 import GoogleButton from "@/components/auth/GoogleButton";
@@ -24,6 +24,7 @@ import GoogleButton from "@/components/auth/GoogleButton";
 export default function SigninPage() {
   const [error, setError] = useState("");
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<SigninInput>({
     resolver: zodResolver(signinSchema),
@@ -124,12 +125,25 @@ export default function SigninPage() {
               <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 {...form.register("password")}
-                className="pl-10"
+                className="px-10"
                 placeholder="Enter your password"
                 disabled={isLoading}
               />
+              <Button
+                variant={"ghost"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500  p-1 cursor-pointer hover:bg-transparent"
+                size={"icon"}
+                onClick={() => setShowPassword(!showPassword)}
+                type="button"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </Button>
             </div>
             {form.formState.errors.password && (
               <p className="text-sm text-red-500">
