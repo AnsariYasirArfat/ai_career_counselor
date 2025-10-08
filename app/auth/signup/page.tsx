@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Mail, Lock, User } from "lucide-react";
+import { Loader2, Mail, Lock, User, EyeOff, Eye } from "lucide-react";
 import Link from "next/link";
 import { useTRPCClient } from "@/app/_trpc/client";
 import { Button } from "@/components/ui/button";
@@ -20,10 +20,13 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { signupSchema, type SignupInput } from "@/lib/validations";
 import GoogleButton from "@/components/auth/GoogleButton";
+import { useState } from "react";
 
 export default function SignupPage() {
   const router = useRouter();
   const trpcClient = useTRPCClient();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
@@ -137,12 +140,25 @@ export default function SignupPage() {
               <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 {...form.register("password")}
-                className="pl-10"
+                className="px-10"
                 placeholder="Create a password"
                 disabled={isLoading}
               />
+              <Button
+                variant={"ghost"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500  p-1 cursor-pointer hover:bg-transparent"
+                size={"icon"}
+                onClick={() => setShowPassword(!showPassword)}
+                type="button"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </Button>
             </div>
             {form.formState.errors.password && (
               <p className="text-sm text-red-500">
@@ -157,12 +173,25 @@ export default function SignupPage() {
               <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="confirmPassword"
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 {...form.register("confirmPassword")}
-                className="pl-10"
+                className="px-10"
                 placeholder="Confirm your password"
                 disabled={isLoading}
               />
+              <Button
+                variant={"ghost"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500  p-1 cursor-pointer hover:bg-transparent"
+                size={"icon"}
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                type="button"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </Button>
             </div>
             {form.formState.errors.confirmPassword && (
               <p className="text-sm text-red-500">

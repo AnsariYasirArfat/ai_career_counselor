@@ -17,7 +17,6 @@ interface MessageListProps {
   loadMore: () => void;
   hasMore: boolean;
   isLoading: boolean;
-  shouldScrollToBottom?: boolean;
 }
 
 export default function MessageList({
@@ -25,20 +24,19 @@ export default function MessageList({
   loadMore,
   hasMore,
   isLoading,
-  shouldScrollToBottom = false,
 }: MessageListProps) {
   const SCROLLABLE_ID = "chat-message-scrollable";
   const scrollRef = useRef<HTMLDivElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (shouldScrollToBottom && scrollRef.current) {
+    if ( scrollRef.current) {
       scrollRef.current.scrollTo({
         top: 0,
         behavior: "smooth",
       });
     }
-  }, [shouldScrollToBottom, messages]);
+  }, [ messages]);
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
