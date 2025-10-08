@@ -54,7 +54,7 @@ export default function ChatRoomPage() {
     [data]
   );
 
-  const insertFailedAiPlaceholder = (text: string) => {
+  const insertFailedAiPlaceholder = () => {
     const idFail = `temp-ai-failed-${Date.now()}`;
     setFailedAiId(idFail);
   };
@@ -150,7 +150,7 @@ export default function ChatRoomPage() {
 
     onError: (_err, _vars, context) => {
       setFailedUserText(context?.tempUserMessage?.content || null);
-      insertFailedAiPlaceholder(context?.tempUserMessage?.content || "");
+      insertFailedAiPlaceholder();
     },
   });
 
@@ -202,7 +202,7 @@ export default function ChatRoomPage() {
     },
 
     onError: () => {
-      insertFailedAiPlaceholder(failedUserText || "");
+      insertFailedAiPlaceholder();
     },
   });
 
