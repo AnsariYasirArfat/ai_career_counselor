@@ -8,7 +8,14 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
-import { createTRPCClient, httpBatchLink, TRPCClientError } from "@trpc/client";
+import {
+  createTRPCClient,
+  httpBatchLink,
+  httpBatchStreamLink,
+  httpSubscriptionLink,
+  splitLink,
+  TRPCClientError,
+} from "@trpc/client";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -66,7 +73,11 @@ export default function TRPCQueryProvider({
   const [trpcClient] = useState(() =>
     createTRPCClient<AppRouter>({
       links: [
-        httpBatchLink({ url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/trpc` }),
+        splitLink({
+          condition: (op) => op.type === "subscription",
+          true: httpSubscriptionLink({ url: "/api/trpc" }),
+          false: httpBatchLink({ url: "/api/trpc" }),
+        }),
       ],
     })
   );

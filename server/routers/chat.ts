@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
-import { generateCareerReply, PlainMessage } from "@/lib/ai/gemini";
+import {
+  generateCareerReply,
+  generateCareerStreamResponse,
+  PlainMessage,
+} from "@/lib/ai/gemini";
 
 export const chatRouter = router({
   getChatSessions: protectedProcedure
@@ -223,7 +227,7 @@ export const chatRouter = router({
         try {
           aiText = await generateCareerReply(messagesContext);
         } catch (error) {
-          console.error("AI Generation failed:", error);
+          console.error("AI service temporarily unavailable: ", error);
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "AI service temporarily unavailable. Please try again.",
@@ -248,7 +252,7 @@ export const chatRouter = router({
         });
 
         await ctx.prisma.chatSession.update({
-          where: { id: input.sessionId , userId: ctx.user.id},
+          where: { id: input.sessionId, userId: ctx.user.id },
           data: { updatedAt: new Date() },
         });
 
@@ -258,6 +262,93 @@ export const chatRouter = router({
         };
       } catch (error) {
         console.error("Message sending failed:", error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to send message",
+        });
+      }
+    }),
+
+  sendMessageStream: protectedProcedure
+    .input(
+      z.object({
+        sessionId: z.string(),
+        content: z.string().min(1, "Message cannot be empty"),
+      })
+    )
+    .subscription(async function* ({ input, ctx }) {
+      try {
+        const session = await ctx.prisma.chatSession.findFirst({
+          where: {
+            id: input.sessionId,
+            deletedAt: null,
+            userId: ctx.user.id,
+          },
+        });
+
+        if (!session) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Chat session not found or deleted",
+          });
+        }
+
+        const LAST_N = 20;
+        const recent = await ctx.prisma.message.findMany({
+          where: { sessionId: input.sessionId },
+          orderBy: { createdAt: "asc" },
+          take: LAST_N,
+        });
+
+        const messagesContext: PlainMessage[] = [
+          ...recent.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          {
+            role: "USER",
+            content: input.content,
+          },
+        ];
+
+        let aiText: string = "";
+        const stream = generateCareerStreamResponse(messagesContext);
+        for await (const chunk of stream) {
+          aiText += chunk;
+          yield chunk;
+        }
+
+        const userMessage = await ctx.prisma.message.create({
+          data: {
+            sessionId: input.sessionId,
+            role: "USER",
+            content: input.content,
+          },
+        });
+
+        const aiMessage = await ctx.prisma.message.create({
+          data: {
+            sessionId: input.sessionId,
+            role: "ASSISTANT",
+            content: aiText,
+          },
+        });
+
+        await ctx.prisma.chatSession.update({
+          where: { id: input.sessionId, userId: ctx.user.id },
+          data: { updatedAt: new Date() },
+        });
+
+        yield JSON.stringify({
+          done: true,
+          userMessage,
+          aiMessage,
+        });
+      } catch (error) {
+        console.error("Message streaming failed:", error);
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -288,7 +379,7 @@ export const chatRouter = router({
         }
 
         await ctx.prisma.chatSession.update({
-          where: { id: input.id , userId: ctx.user.id},
+          where: { id: input.id, userId: ctx.user.id },
           data: { deletedAt: new Date() },
         });
 

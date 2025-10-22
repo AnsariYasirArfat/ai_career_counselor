@@ -1,4 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Content, GoogleGenAI } from "@google/genai";
+import { SYSTEM_PROMPT } from "./prompts";
 
 type Role = "USER" | "ASSISTANT";
 
@@ -6,64 +7,88 @@ export type PlainMessage = {
   role: Role;
   content: string;
 };
-
+const MAX_CHARS = 50000;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
 const DEFAULT_MODEL = process.env.AI_MODEL;
 
-const SYSTEM_PROMPT = `
-You are an empathetic career counselor and coach.
+const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-- Ask clarifying questions about the user’s background (education, skills, experience, interests, goals).  
-- Suggest multiple career paths aligned with their strengths, with clear next steps (skills, certifications, projects, experiences).  
-- Give practical job search support: resume/CV tips, portfolio, interview prep, networking.  
-- Share realistic insights: industry trends, demand, salaries, challenges, trade-offs.  
-- Communicate in a friendly, motivating, and clear tone; use bullets or step-by-step guidance.  
+function getRecentContents(
+  messages: PlainMessage[],
+  maxChars: number = MAX_CHARS
+): Content[] {
+  let accumulatedChars = 0;
+  const contents: Content[] = [];
 
-If the user asks non-career questions, politely decline and redirect back to careers.  
-Always ask for missing info before giving broad advice.  
-`;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    const role = msg.role === "USER" ? "user" : "model";
+    const parts = [{ text: msg.content ?? "" }];
+    accumulatedChars += msg.content.length;
+
+    if (accumulatedChars > maxChars) {
+      break;
+    }
+    contents.push({
+      role,
+      parts,
+    });
+  }
+
+  return contents.reverse();
+}
 
 export async function generateCareerReply(
   messages: PlainMessage[],
-  modelName: string = DEFAULT_MODEL!
+  model: string = DEFAULT_MODEL!
 ): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY is missing");
+  if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is missing");
 
-  const MAX_CHARS = 50000;
-  let acc = 0;
-  const recent = [];
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const m = messages[i];
-    acc += m.content.length;
-    if (acc > MAX_CHARS) break;
-    recent.push(m);
-  }
-  recent.reverse();
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-
-  const model = genAI.getGenerativeModel({
-    model: modelName,
-    systemInstruction: {
-      role: "user",
-      parts: [{ text: SYSTEM_PROMPT }],
-    },
-  });
-
-  const contents = recent.map((m) => ({
-    role: m.role === "USER" ? "user" : "model",
-    parts: [{ text: m.content }],
-  }));
+  const contents = getRecentContents(messages);
 
   try {
-    const result = await model.generateContent({ contents });
-    const text = result?.response?.text?.() || "";
+    const response = await genAI.models.generateContent({
+      model,
+      config: {
+        systemInstruction: { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
+      },
+      contents,
+    });
+
+    const text = response?.text || "";
     return (
       text.trim() ||
       "I’m here to help. Could you share a bit more about your goals or current situation?"
     );
-  } catch (e) {
-    console.error("AI Generation failed:", e);
+  } catch (error) {
+    console.error("AI Generation failed:: ", error);
+    throw new Error("AI service temporarily unavailable. Please try again.");
+  }
+}
+
+export async function* generateCareerStreamResponse(
+  messages: PlainMessage[],
+  model: string = DEFAULT_MODEL!
+): AsyncGenerator<string, void, unknown> {
+  if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is missing");
+  const contents = getRecentContents(messages);
+
+  try {
+    const response = await genAI.models.generateContentStream({
+      model,
+      config: {
+        systemInstruction: { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
+      },
+      contents,
+    });
+
+    for await (const chunk of response) {
+      if (chunk.text) {
+        yield chunk.text;
+      }
+    }
+  } catch (error) {
+    console.error("AI streaming failed:: ", error);
     throw new Error("AI service temporarily unavailable. Please try again.");
   }
 }
