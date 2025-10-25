@@ -279,7 +279,7 @@ export const chatRouter = router({
         content: z.string().min(1, "Message cannot be empty"),
       })
     )
-    .subscription(async function* ({ input, ctx }) {
+    .subscription(async function* ({ input, ctx, signal }) {
       try {
         const session = await ctx.prisma.chatSession.findFirst({
           where: {
@@ -348,13 +348,15 @@ export const chatRouter = router({
           aiMessage,
         });
       } catch (error) {
-        console.error("Message streaming failed:", error);
+        const errorMessage = error instanceof Error ? error.message : "Failed to AI response";
+        console.error("Message streaming failed:", errorMessage);
         if (error instanceof TRPCError) {
           throw error;
         }
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send message",
+          message: errorMessage,
+          cause: error instanceof Error ? error : undefined,
         });
       }
     }),

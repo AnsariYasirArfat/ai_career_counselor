@@ -1,18 +1,14 @@
 "use client";
 import { useParams } from "next/navigation";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MessageList from "@/components/ChatRoom/MessageList";
 import ChatInput from "@/components/ChatRoom/ChatInput";
 import Link from "next/link";
 import TypingIndicator from "@/components/ChatRoom/TypingIndicator";
 import ChatRoomSkeleton from "@/components/ChatRoom/ChatRoomSkeleton";
 import { MessageCircle, AlertCircle, RefreshCw } from "lucide-react";
-import { useTRPC, useTRPCClient } from "@/app/_trpc/client";
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useTRPC } from "@/app/_trpc/client";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@trpc/tanstack-react-query";
 
@@ -21,12 +17,10 @@ const PAGE_SIZE = 10;
 export default function ChatRoomPage() {
   const { id } = useParams() as { id: string };
   const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
 
   const [failedUserText, setFailedUserText] = useState<string | null>(null);
 
-  const [isStreaming, setIsStreaming] = useState(false);
   const [subscriptionInput, setSubscriptionInput] = useState<string>("");
 
   const messagesListOpts = trpc.chat.getMessages.infiniteQueryOptions(
@@ -41,8 +35,6 @@ export default function ChatRoomPage() {
     { getNextPageParam: (lastPage) => lastPage.nextCursor ?? null }
   );
   const sessionsListKey = sessionsListOpts.queryKey;
-
-  const lastTempUserIdRef = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const scrollDown = () => {
@@ -69,90 +61,6 @@ export default function ChatRoomPage() {
     () => (data?.pages ?? []).flatMap((p) => p.messages),
     [data]
   );
-
-  const sendMutation = useMutation({
-    mutationFn: ({ content }: { content: string; isRetry: boolean }) =>
-      trpcClient.chat.sendMessage.mutate({ sessionId: id, content }),
-
-    onMutate: async ({ content, isRetry }) => {
-      await queryClient.cancelQueries({ queryKey: messagesListKey });
-      if (!isRetry) {
-        setFailedUserText(null);
-        const previous = queryClient.getQueryData(messagesListKey);
-
-        const tmpUserId = `temp-user-${Date.now()}`;
-        lastTempUserIdRef.current = tmpUserId;
-
-        const tempUserMessage = {
-          id: tmpUserId,
-          sessionId: id,
-          role: "USER" as const,
-          content,
-          createdAt: new Date().toISOString(),
-        };
-
-        queryClient.setQueryData(messagesListKey, (old: any) => {
-          if (!old) return old;
-          const pages = old.pages.map((p: any, idx: number) => {
-            if (idx !== 0) return p;
-            const next = [tempUserMessage, ...(p.messages ?? [])];
-            return { ...p, messages: next };
-          });
-          return { ...old, pages };
-        });
-        scrollDown();
-
-        return { previous, tempUserMessage };
-      }
-      return { previous: null, tempUserMessage: null };
-    },
-
-    onSuccess: async ({ userMessage, aiMessage }, { isRetry }, context) => {
-      setFailedUserText(null);
-      const tmpMsgId = !isRetry
-        ? context?.tempUserMessage?.id
-        : lastTempUserIdRef.current;
-
-      queryClient.setQueryData(messagesListKey, (old: any) => {
-        if (!old) return old;
-        const pages = old.pages.map((p: any, idx: number) => {
-          if (idx !== 0) return p;
-          const withoutTemp = (p.messages ?? []).filter(
-            (m: any) => m.id !== tmpMsgId
-          );
-          const next = [aiMessage, userMessage, ...withoutTemp];
-
-          return { ...p, messages: next };
-        });
-        return { ...old, pages };
-      });
-
-      queryClient.setQueryData(sessionsListKey, (old: any) => {
-        if (!old) return old;
-        const pages = old.pages.map((p: any, idx: number) => {
-          if (idx !== 0) return p;
-          const list = p.sessions ?? [];
-          const index = list.findIndex((s: any) => s.id === id);
-          if (index === -1) return p;
-
-          const current = list[index];
-          const updated = {
-            ...current,
-            updatedAt: aiMessage.createdAt ?? new Date().toISOString(),
-            message: [{ ...aiMessage }],
-          };
-          const without = list.filter((_: any, i: number) => i !== index);
-          return { ...p, sessions: [updated, ...without] };
-        });
-        return { ...old, pages };
-      });
-      scrollDown();
-    },
-
-    onError: (_err, { isRetry }, context) => {
-      !isRetry && setFailedUserText(context?.tempUserMessage?.content || null);
-    },
-  });
 
   // Helper function to update messages in cache
   const updateMessagesCache = useCallback(
@@ -206,7 +114,6 @@ export default function ChatRoomPage() {
             if (data.startsWith('{"done":true')) {
               const parsed = JSON.parse(data);
               if (parsed.done) {
-                setIsStreaming(false);
                 setFailedUserText(null);
                 setSubscriptionInput("");
 
@@ -260,23 +167,37 @@ export default function ChatRoomPage() {
           }
         },
         onError: (error) => {
-          console.error("Streaming error:", error);
-          setIsStreaming(false);
-          setFailedUserText(subscriptionInput);
-          setSubscriptionInput("");
-
-          // Remove streaming message on error
-          updateMessagesCache((messages) =>
-            messages.filter((m: any) => !m.id.startsWith("streaming-"))
-          );
+          console.error("------connection error-----", error);
+          handleStreamingError();
         },
       }
     )
   );
 
+  const isConnecting = streamingSubscription.status === "connecting";
+  const isPending = streamingSubscription.status === "pending";
+  const isErrorStreaming = streamingSubscription.status === "error";
+
+  // Clean up function for error handling
+  const handleStreamingError = useCallback(() => {
+    setFailedUserText(subscriptionInput);
+    setSubscriptionInput("");
+    streamingSubscription.status = "error";
+    updateMessagesCache((messages) =>
+      messages.filter((m: any) => !m.id.startsWith("streaming-"))
+    );
+  }, [subscriptionInput, updateMessagesCache]);
+
+  useEffect(() => {
+    const hasError = isErrorStreaming || !!streamingSubscription.error;
+    if (hasError) {
+      console.error("Serialized error detected, cleaning up...");
+      handleStreamingError();
+    }
+  }, [streamingSubscription]);
+
   const startStreaming = useCallback(
     (content: string, isRetry: boolean = false) => {
-      setIsStreaming(true);
       setFailedUserText(null);
       setSubscriptionInput(content);
 
@@ -297,24 +218,20 @@ export default function ChatRoomPage() {
     },
     [id, updateMessagesCache]
   );
-
-  const isConnecting = streamingSubscription.status === "connecting";
-  const isPending = streamingSubscription.status === "pending";
-  const isErrorStreaming = streamingSubscription.status === "error";
-
+  
   const handleSend = useCallback(
     (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || isPending || isStreaming) return;
+      if (!trimmed || isPending) return;
       startStreaming(trimmed, false);
     },
-    [startStreaming, isStreaming]
+    [startStreaming]
   );
 
   const handleRetry = useCallback(() => {
-    if (!failedUserText || isPending || isStreaming) return;
+    if (!failedUserText || isPending) return;
     startStreaming(failedUserText, true);
-  }, [failedUserText, startStreaming, isStreaming]);
+  }, [failedUserText, startStreaming]);
 
   if (isLoading) {
     return <ChatRoomSkeleton />;
@@ -364,9 +281,9 @@ export default function ChatRoomPage() {
           </div>
         )}
 
-        {failedUserText && isErrorStreaming && (
+        {isErrorStreaming && (
           <div className="pb-1 max-w-[760px] w-full mx-auto">
-            <div className="flex items-center gap-3 px-5 py-3  max-w-[80%] border border-red-500  rounded-3xl rounded-tl-md">
+            <div className="flex flex-wrap items-center gap-3 px-5 py-3  max-w-[80%] border border-red-500  rounded-3xl rounded-tl-md">
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
               <div className="flex-1">
                 <div className="text-sm font-medium text-red-500">
@@ -390,7 +307,7 @@ export default function ChatRoomPage() {
           </div>
         )}
 
-        {(isConnecting || isPending) && isStreaming && (
+        {(isConnecting || isPending) && (
           <div className="pb-1 max-w-[760px] w-full mx-auto">
             <TypingIndicator
               text={

@@ -11,7 +11,6 @@ import {
 import {
   createTRPCClient,
   httpBatchLink,
-  httpBatchStreamLink,
   httpSubscriptionLink,
   splitLink,
   TRPCClientError,
