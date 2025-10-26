@@ -25,7 +25,7 @@ export default function ChatRoomList({
   const queryClient = useQueryClient();
   const trpc = useTRPC();
   const trpcClient = useTRPCClient();
-  const params = useParams() as { id?: string }; 
+  const params = useParams() as { id?: string };
   const activeId = params?.id;
 
   const listOpts = trpc.chat.getChatSessions.infiniteQueryOptions(

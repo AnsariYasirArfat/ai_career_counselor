@@ -80,7 +80,7 @@ export default function ChatRoomPage() {
 
   // Helper function to update sessions cache
   const updateSessionsCache = useCallback(
-    (aiMessage: any) => {
+    (updatedSession: any) => {
       queryClient.setQueryData(sessionsListKey, (old: any) => {
         if (!old) return old;
         const pages = old.pages.map((p: any, idx: number) => {
@@ -88,15 +88,8 @@ export default function ChatRoomPage() {
           const list = p.sessions ?? [];
           const index = list.findIndex((s: any) => s.id === id);
           if (index === -1) return p;
-
-          const current = list[index];
-          const updated = {
-            ...current,
-            updatedAt: aiMessage.createdAt ?? new Date().toISOString(),
-            message: [{ ...aiMessage }],
-          };
           const without = list.filter((_: any, i: number) => i !== index);
-          return { ...p, sessions: [updated, ...without] };
+          return { ...p, sessions: [updatedSession, ...without] };
         });
         return { ...old, pages };
       });
@@ -135,7 +128,7 @@ export default function ChatRoomPage() {
                   ];
                 });
 
-                updateSessionsCache(parsed.aiMessage);
+                updateSessionsCache(parsed.updatedSession);
                 scrollDown();
               }
             } else {

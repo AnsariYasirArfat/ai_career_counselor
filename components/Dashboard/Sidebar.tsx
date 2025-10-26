@@ -9,6 +9,7 @@ import NewChatModal from "./NewChatModal";
 import ChatRoomList from "./ChatRoomList";
 import { useSession } from "next-auth/react";
 import ChatRoomListSkeleton from "./ChatRoomListSkeleton";
+import NewChat from "./NewChat";
 
 interface SidebarProps {
   closeDrawer?: () => void;
@@ -60,32 +61,7 @@ export default function Sidebar({ closeDrawer, isDrawer }: SidebarProps) {
         </Link>
       </div>
 
-      <div
-        className={cn(
-          "flex items-center",
-          collapsed ? "justify-center " : "justify-between"
-        )}
-      >
-        <Button
-          className={cn(
-            "w-full  hover:!bg-zinc-400/20 cursor-pointer",
-            collapsed ? "justify-center " : "justify-start"
-          )}
-          variant="ghost"
-          onClick={() => {
-            setModalOpen(true);
-          }}
-          disabled={!session}
-        >
-          <SquarePen />
-          <span className={cn("", collapsed && "hidden")}>New Chat</span>
-        </Button>
-        <NewChatModal
-          open={modalOpen}
-          setOpen={setModalOpen}
-          closeDrawer={closeDrawer}
-        />
-      </div>
+      <NewChat closeDrawer={closeDrawer} collapsed={collapsed} />
 
       <div
         id="chatroom-scrollable"

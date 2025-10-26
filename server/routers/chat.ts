@@ -2,6 +2,7 @@ import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import {
+  generateAutoSessionTitle,
   generateCareerReply,
   generateCareerStreamResponse,
   PlainMessage,
@@ -336,19 +337,30 @@ export const chatRouter = router({
             content: aiText,
           },
         });
+        let updatedSession;
+        if (recent.length === 0) {
+          const sessionTitle = await generateAutoSessionTitle(input.content);
 
-        await ctx.prisma.chatSession.update({
-          where: { id: input.sessionId, userId: ctx.user.id },
-          data: { updatedAt: new Date() },
-        });
+          updatedSession = await ctx.prisma.chatSession.update({
+            where: { id: input.sessionId, userId: ctx.user.id },
+            data: { title: sessionTitle, updatedAt: new Date() },
+          });
+        } else {
+          updatedSession = await ctx.prisma.chatSession.update({
+            where: { id: input.sessionId, userId: ctx.user.id },
+            data: { updatedAt: new Date() },
+          });
+        }
 
         yield JSON.stringify({
           done: true,
           userMessage,
           aiMessage,
+          updatedSession,
         });
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Failed to AI response";
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to AI response";
         console.error("Message streaming failed:", errorMessage);
         if (error instanceof TRPCError) {
           throw error;
