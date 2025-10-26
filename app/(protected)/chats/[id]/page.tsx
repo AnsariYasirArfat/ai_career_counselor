@@ -11,6 +11,7 @@ import { useTRPC } from "@/app/_trpc/client";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@trpc/tanstack-react-query";
+import { handleUnauthorizedError } from "@/lib/error-handling";
 
 const PAGE_SIZE = 10;
 
@@ -166,8 +167,12 @@ export default function ChatRoomPage() {
             }
           }
         },
-        onError: (error) => {
+        onError: async (error) => {
           console.error("------connection error-----", error);
+          const wasUnauthorized = await handleUnauthorizedError(error, "/");
+          if (wasUnauthorized) {
+            return;
+          }
           handleStreamingError();
         },
       }
@@ -180,7 +185,7 @@ export default function ChatRoomPage() {
 
   // Clean up function for error handling
   const handleStreamingError = useCallback(() => {
-    setFailedUserText(subscriptionInput);
+    subscriptionInput && setFailedUserText(subscriptionInput);
     setSubscriptionInput("");
     streamingSubscription.status = "error";
     updateMessagesCache((messages) =>
@@ -218,7 +223,7 @@ export default function ChatRoomPage() {
     },
     [id, updateMessagesCache]
   );
-  
+
   const handleSend = useCallback(
     (text: string) => {
       const trimmed = text.trim();
