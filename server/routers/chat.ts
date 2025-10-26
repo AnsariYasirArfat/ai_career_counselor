@@ -182,6 +182,51 @@ export const chatRouter = router({
       }
     }),
 
+  updateSessionTitle: protectedProcedure
+    .input(
+      z.object({
+        title: z.string().min(1, "Title is required"),
+        sessionId: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const session = await ctx.prisma.chatSession.findFirst({
+          where: {
+            id: input.sessionId,
+            userId: ctx.user.id,
+            deletedAt: null,
+          },
+        });
+
+        if (!session) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Chat session not found or deleted",
+          });
+        }
+
+        const updatedSession = await ctx.prisma.chatSession.update({
+          where: {
+            id: input.sessionId,
+            userId: ctx.user.id,
+            deletedAt: null,
+          },
+          data: { title: input.title.trim(), updatedAt: new Date() },
+        });
+
+        return updatedSession;
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update session title",
+        });
+      }
+    }),
+
   sendMessage: protectedProcedure
     .input(
       z.object({

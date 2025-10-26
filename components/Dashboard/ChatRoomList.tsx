@@ -1,7 +1,7 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
-import { Loader2, Trash2 } from "lucide-react";
+import { Check, Edit, Loader2, MoreVertical, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import ConfirmModal from "@/components/common/ConfirmModal";
@@ -13,6 +13,14 @@ import {
 } from "@tanstack/react-query";
 import { useTRPC, useTRPCClient } from "@/app/_trpc/client";
 import ChatRoomListSkeleton from "./ChatRoomListSkeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -27,6 +35,10 @@ export default function ChatRoomList({
   const trpcClient = useTRPCClient();
   const params = useParams() as { id?: string };
   const activeId = params?.id;
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const listOpts = trpc.chat.getChatSessions.infiniteQueryOptions(
     { limit: ITEMS_PER_PAGE, cursor: null },
@@ -47,6 +59,75 @@ export default function ChatRoomList({
     () => (data?.pages ?? []).flatMap((p) => p.sessions),
     [data]
   );
+
+  const updateTitleMutation = useMutation({
+    mutationFn: ({ sessionId, title }: { sessionId: string; title: string }) =>
+      trpcClient.chat.updateSessionTitle.mutate({ sessionId, title }),
+
+    onSuccess: (updateSession) => {
+      queryClient.setQueryData(listKey, (old: any) => {
+        if (!old) return old;
+        const pages = old.pages.map((p: any) => ({
+          ...p,
+          sessions: (p.sessions ?? []).map((s: any) =>
+            s.id === updateSession.id ? updateSession : s
+          ),
+        }));
+        return { ...old, pages };
+      });
+
+      toast.success("Session title updated!");
+      setEditingId(null);
+      setEditTitle("");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update title");
+      setEditingId(null);
+      setEditTitle("");
+    },
+  });
+
+  const startEditing = (id: string, title: string) => {
+    setEditingId(id);
+    setEditTitle(title);
+  };
+
+  const handleSaveTitle = () => {
+    if (!editingId || !editTitle.trim()) return;
+
+    const trimmedTitle = editTitle.trim();
+    const currentSession = sessions.find((s) => s.id === editingId);
+
+    if (trimmedTitle === currentSession?.title) {
+      setEditingId(null);
+      setEditTitle("");
+      return;
+    }
+
+    updateTitleMutation.mutate({
+      sessionId: editingId,
+      title: trimmedTitle,
+    });
+  };
+
+  const handleCancelEditing = () => {
+    setEditingId(null);
+    setEditTitle("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSaveTitle();
+    } else if (e.key === "Escape") {
+      handleCancelEditing();
+    }
+  };
+
+  useEffect(() => {
+    if (editingId && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [editingId]);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) =>
@@ -84,7 +165,7 @@ export default function ChatRoomList({
     if (!selectedId) return;
     deleteMutation.mutate(selectedId);
   };
-  const handleCancel = () => {
+  const handleCancelDelete = () => {
     if (deleteMutation.isPending) return;
     setModalOpen(false);
     setSelectedId(null);
@@ -114,39 +195,97 @@ export default function ChatRoomList({
         style={{ overflow: "visible" }}
       >
         <div className="space-y-2">
-          {sessions.map((room) => {
-            const isActive = activeId === room.id;
+          {sessions.map((session) => {
+            const isActive = activeId === session.id;
+            const isEditing = editingId === session.id;
             return (
               <div
-                key={room.id}
+                key={session.id}
                 className={`flex items-center group p-2 rounded-lg hover:bg-zinc-400/20 ${
                   isActive ? "bg-zinc-400/30 dark:bg-zinc-700/40" : ""
-                }`}
-                aria-current={isActive ? "page" : undefined}
+                }
+                ${isEditing && "bg-zinc-400/20"}`}
               >
-                <Link
-                  href={`/chats/${room.id}`}
-                  onNavigate={() => onRoomClick && onRoomClick()}
-                  passHref
-                  className={`flex-1 block p-1 cursor-pointer transition truncate whitespace-nowrap ${
-                    isActive ? "font-semibold" : ""
-                  }`}
-                  title={room.title}
-                >
-                  {room.title}
-                </Link>
-                <button
-                  onClick={() => openDeleteModal(room.id)}
-                  className={`ml-2 p-2 rounded-lg transition-colors text-zinc-400 lg:opacity-0 group-hover:opacity-100 focus:opacity-100 ${
-                    isActive
-                      ? "hover:bg-zinc-500 hover:text-red-300"
-                      : "hover:bg-zinc-500 hover:text-red-300"
-                  }`}
-                  title="Delete chat room"
-                  tabIndex={0}
-                >
-                  <Trash2 size={16} />
-                </button>
+                {isEditing ? (
+                  <>
+                    <Input
+                      ref={inputRef}
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      className="!p-1 flex-1 h-8 text-sm focus-visible:outline-none focus-visible:border-none focus-visible:ring-0 border-none !bg-transparent"
+                      disabled={updateTitleMutation.isPending}
+                    />
+                    <div className="flex items-center gap-0.5 ml-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 hover:bg-green-100 hover:text-green-600"
+                        onClick={handleSaveTitle}
+                        disabled={
+                          updateTitleMutation.isPending || !editTitle.trim()
+                        }
+                        title="Save"
+                      >
+                        <Check className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 hover:bg-red-100 hover:text-red-600"
+                        onClick={handleCancelEditing}
+                        disabled={updateTitleMutation.isPending}
+                        title="Cancel"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href={`/chats/${session.id}`}
+                      onNavigate={() => onRoomClick && onRoomClick()}
+                      passHref
+                      className={`flex-1 block p-1 cursor-pointer transition truncate whitespace-nowrap text-sm font-semibold ${
+                        isActive ? "font-semibold" : ""
+                      }`}
+                      title={session.title}
+                    >
+                      {session.title}
+                    </Link>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 md:opacity-0 md:group-hover:opacity-100"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          title="Rename chat session"
+                          onClick={() =>
+                            startEditing(session.id, session.title)
+                          }
+                        >
+                          <Edit size={12} />
+                          Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-400 hover:!text-red-400 hover:!bg-red-800/10 font-medium"
+                          title="Delete chat room"
+                          onClick={() => openDeleteModal(session.id)}
+                        >
+                          <Trash2 className="text-red-400" size={12} />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                )}
               </div>
             );
           })}
@@ -159,7 +298,7 @@ export default function ChatRoomList({
         description="Are you sure you want to delete this chatroom? This action cannot be undone."
         isLoading={deleteMutation.isPending}
         onConfirm={handleConfirmDelete}
-        onCancel={handleCancel}
+        onCancel={handleCancelDelete}
         confirmText="Delete"
         cancelText="Cancel"
       />

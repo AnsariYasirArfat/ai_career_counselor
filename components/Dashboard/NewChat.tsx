@@ -52,7 +52,7 @@ export default function NewChat({ closeDrawer, collapsed }: NewChatProps) {
   return (
     <div
       className={cn(
-        "flex items-center",
+        "flex items-center px-2",
         collapsed ? "justify-center " : "justify-between"
       )}
     >

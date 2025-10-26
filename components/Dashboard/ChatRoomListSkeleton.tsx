@@ -8,8 +8,8 @@ export default function ChatRoomListSkeleton({ count = 8 }: { count?: number }) 
           key={i}
           className="flex items-center group p-2 rounded-full"
         >
-          <Skeleton className="flex-1 h-6" />
-          <Skeleton className="h-5 w-5 ml-2 rounded-full" />
+          <Skeleton className="flex-1 h-8" />
+          {/* <Skeleton className="h-5 w-5 ml-2 rounded-full" /> */}
         </div>
       ))}
     </div>

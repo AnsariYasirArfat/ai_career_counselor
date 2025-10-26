@@ -5,7 +5,6 @@ import { ModeToggle } from "@/components/common/ModeToggle";
 import { cn } from "@/lib/utils";
 import { Menu, SquarePen, Search } from "lucide-react";
 import Link from "next/link";
-import NewChatModal from "./NewChatModal";
 import ChatRoomList from "./ChatRoomList";
 import { useSession } from "next-auth/react";
 import ChatRoomListSkeleton from "./ChatRoomListSkeleton";
@@ -18,7 +17,6 @@ interface SidebarProps {
 
 export default function Sidebar({ closeDrawer, isDrawer }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
   const { data: session, status } = useSession();
   const isAuthLoading = status === "loading";
   const isAuthed = !!session?.user;
@@ -31,13 +29,13 @@ export default function Sidebar({ closeDrawer, isDrawer }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex flex-col gap-2 sm:gap-4 p-4 h-[100svh] bg-[#f0f4f9] dark:bg-[#282a2c] transition-all duration-300 ",
+        "flex flex-col gap-2 sm:gap-4 py-4 h-[100svh] bg-[#f0f4f9] dark:bg-[#282a2c] transition-all duration-300 ",
         collapsed ? "w-16 " : "w-64 "
       )}
     >
       <div
         className={cn(
-          "flex items-center",
+          "flex items-center px-2",
           collapsed ? "justify-center " : "justify-between"
         )}
       >
@@ -45,7 +43,7 @@ export default function Sidebar({ closeDrawer, isDrawer }: SidebarProps) {
           variant="ghost"
           size="icon"
           onClick={() => handleNav(() => setCollapsed((c) => !c))}
-          className={` flex justify-center items-center hover:!bg-zinc-400/20`}
+          className={`flex justify-center items-center hover:!bg-zinc-400/20`}
         >
           <Menu size={20} />
         </Button>
@@ -93,7 +91,7 @@ export default function Sidebar({ closeDrawer, isDrawer }: SidebarProps) {
         )}
       </div>
 
-      <div className="mt-auto flex justify-start">
+      <div className="mt-auto flex justify-start px-4">
         <ModeToggle />
       </div>
     </aside>
