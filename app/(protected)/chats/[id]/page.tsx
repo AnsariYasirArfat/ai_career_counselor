@@ -277,7 +277,7 @@ export default function ChatRoomPage() {
 
   return (
     <div className="flex flex-col flex-1 h-full min-h-0 w-full">
-      <div className="flex-1 min-h-0 flex flex-col px-4">
+      <div className="flex-1 min-h-0 flex flex-col">
         {hasAny ? (
           <MessageList
             messages={messages.map((m) => ({
@@ -302,7 +302,7 @@ export default function ChatRoomPage() {
         )}
 
         {isErrorStreaming && (
-          <div className="pb-1 max-w-[760px] w-full mx-auto">
+          <div className="pb-1 max-w-[920px] w-full mx-auto">
             <div className="flex flex-wrap items-center gap-3 px-5 py-3  max-w-[80%] border border-red-500  rounded-3xl rounded-tl-md">
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
               <div className="flex-1">
@@ -328,7 +328,7 @@ export default function ChatRoomPage() {
         )}
 
         {(isConnecting || isPending) && (
-          <div className="pb-1 max-w-[760px] w-full mx-auto">
+          <div className="pb-1 max-w-[920px] w-full mx-auto">
             <TypingIndicator
               text={
                 isConnecting
@@ -342,21 +342,23 @@ export default function ChatRoomPage() {
         )}
       </div>
 
-      <div className="w-full px-4 py-3 ">
-        <div className="max-w-[760px] mx-auto relative">
+      <div className="w-full py-2">
+        <div className="max-w-[920px] mx-auto relative">
           <ChatInput
             onSend={handleSend}
             loading={!!failedUserText || isErrorStreaming || isPending}
           />
           {/* Scroll to bottom button */}
           {showScrollButton && (
+
             <Button
+            variant={"ghost"}
               onClick={scrollDown}
-              className="absolute !bottom-20 right-0 z-50 rounded-full w-8 h-8 shadow-lg bg-transparent border border-oration-orange hover:bg-oration-orange/50 transition-all duration-200"
+              className="absolute !-top-6 -translate-y-1/2 right-1/2 sm:right-0 -translate-x-1/2 sm:translate-x-0 z-50 rounded-full w-6 h-6 sm:w-8 sm:h-8 shadow-lg border border-oration-orange bg-oration-orange/70 hover:!bg-oration-orange/40 transition-all duration-200"
               size="icon"
               title="Scroll to bottom"
             >
-              <ChevronDown className="w-5 h-5 text-oration-orange" />
+              <ChevronDown className="text-white hover:!text-white" />
             </Button>
           )}
         </div>

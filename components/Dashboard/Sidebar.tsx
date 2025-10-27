@@ -29,29 +29,30 @@ export default function Sidebar({ closeDrawer, isDrawer }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex flex-col gap-2 sm:gap-4 py-4 h-[100svh] bg-[#f0f4f9] dark:bg-[#282a2c] transition-all duration-300 ",
-        collapsed ? "w-16 " : "w-64 "
+        "flex flex-col gap-2 sm:gap-4 py-4 h-[100svh] bg-[#f0f4f9] dark:bg-[#282a2c] transition-all ease-in-out duration-500",
+        collapsed ? "w-14" : "w-72"
       )}
     >
       <div
         className={cn(
-          "flex items-center px-2",
-          collapsed ? "justify-center " : "justify-between"
+          "flex flex-wrap items-center px-2 transition-all ease-in-out duration-500",
+          collapsed ? "justify-center flex-col gap-4" : "justify-between"
         )}
       >
         <Button
           variant="ghost"
+          title="Toggle Sidebar"
           size="icon"
           onClick={() => handleNav(() => setCollapsed((c) => !c))}
           className={`flex justify-center items-center hover:!bg-zinc-400/20`}
         >
-          <Menu size={20} />
+          <Menu size={16} />
         </Button>
         <Link
           href="/search"
+          title="Search"
           className={cn(
-            "p-2 rounded-full hover:bg-zinc-400/20 transition-colors",
-            collapsed && "hidden"
+            "p-2 rounded-md hover:bg-zinc-400/20 transition-colors"
           )}
           onNavigate={() => handleNav()}
         >
@@ -71,15 +72,22 @@ export default function Sidebar({ closeDrawer, isDrawer }: SidebarProps) {
         ) : isAuthed ? (
           <div
             className={cn(
-              "text-gray-700 dark:text-gray-300",
-              collapsed && "hidden"
+              "text-gray-700 dark:text-gray-300 transition-all duration-500 ease-in-out",
+              collapsed
+                ? "opacity-0 pointer-events-none translate-y-2"
+                : "opacity-100 pointer-events-auto translate-y-0"
             )}
           >
             <ChatRoomList onRoomClick={handleNav} />
           </div>
         ) : (
-          <div className={cn("text-center", collapsed && "hidden")}>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+          <div
+            className={cn(
+              "text-center transition-all duration-500 ease-in-out",
+              collapsed && "hidden"
+            )}
+          >
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm transition-all duration-500 ease-in-out">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                 Once you're signed in, you can access your recent chats here.
               </p>
@@ -91,7 +99,12 @@ export default function Sidebar({ closeDrawer, isDrawer }: SidebarProps) {
         )}
       </div>
 
-      <div className="mt-auto flex justify-start px-4">
+      <div
+        className={cn(
+          "flex items-center px-2 transition-all ease-in-out duration-500",
+          collapsed ? "justify-center " : "justify-between"
+        )}
+      >
         <ModeToggle />
       </div>
     </aside>

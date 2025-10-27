@@ -14,7 +14,7 @@ export default function DrawerSidebar() {
         onClick={() => setOpen(true)}
         aria-label="Open sidebar"
       >
-        <Menu size={20} />
+        <Menu size={16} />
       </button>
       <Drawer open={open} onOpenChange={setOpen} direction="left">
         <DrawerContent className="p-0 !w-64  h-[100svh]">

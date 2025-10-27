@@ -30,7 +30,7 @@ export default function ChatInput({ onSend, loading }: ChatInputProps) {
   };
 
   return (
-    <div className="border border-zinc-400/50 rounded-3xl p-4 flex">
+    <div className="border border-zinc-400/50 rounded-xl sm:rounded-2xl md:rounded-3xl p-2 sm:p-3 md:p-4 flex">
       <textarea
         id="chat-input"
         maxLength={20000}

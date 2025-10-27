@@ -194,14 +194,14 @@ export default function ChatRoomList({
         scrollableTarget="chatroom-scrollable"
         style={{ overflow: "visible" }}
       >
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {sessions.map((session) => {
             const isActive = activeId === session.id;
             const isEditing = editingId === session.id;
             return (
               <div
                 key={session.id}
-                className={`flex items-center group p-2 rounded-lg hover:bg-zinc-400/20 ${
+                className={`flex items-center group p-1 rounded-lg hover:bg-zinc-400/20 ${
                   isActive ? "bg-zinc-400/30 dark:bg-zinc-700/40" : ""
                 }
                 ${isEditing && "bg-zinc-400/20"}`}
@@ -259,9 +259,9 @@ export default function ChatRoomList({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 md:opacity-0 md:group-hover:opacity-100"
+                          className="h-6 w-6 md:opacity-0 md:group-hover:opacity-100"
                         >
-                          <MoreVertical className="h-4 w-4" />
+                          <MoreVertical className="h-3 w-3" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
