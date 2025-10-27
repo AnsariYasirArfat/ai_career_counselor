@@ -1,6 +1,7 @@
 # AI Career Counselor Chat Application
 
-A modern, full-stack AI-powered career counseling application built with Next.js 15, TypeScript, tRPC, TanStack Query, PostgreSQL, Prisma, and Google Gemini AI. This application provides intelligent career guidance through conversational AI with user authentication, persistent chat sessions, and advanced search capabilities.
+A modern, full-stack AI-powered career counseling application built with Next.js 15, TypeScript, tRPC, TanStack Query, PostgreSQL, Prisma, and Google Gemini AI. This application provides intelligent career guidance through conversational AI with user authentication, persistent chat sessions, real-time streaming, and advanced search capabilities.
+
 
 ## 🚀 Live Demo
 [View Live on Vercel](https://ai-career-counselor-chat.vercel.app/)
@@ -11,6 +12,8 @@ This project is a comprehensive career counseling platform featuring:
 
 - **User Authentication**: Secure login/signup with Google OAuth and email/password
 - **AI-Powered Career Guidance**: Intelligent conversations with Google Gemini AI for personalized career advice
+- **Real-time Streaming**: Live AI response streaming for instant user experience
+- **Auto-Title Generation**: AI-generated session titles based on conversation content
 - **Persistent Chat Sessions**: Save and continue conversations with full message history
 - **Advanced Search**: Find and filter chat sessions with real-time search functionality
 - **Responsive Design**: Modern UI with dark/light theme support for desktop and mobile
@@ -32,11 +35,12 @@ This project is a comprehensive career counseling platform featuring:
 - **Markdown**: React Markdown for AI response rendering
 - **Forms**: React Hook Form with Zod validation
 - **Notifications**: Sonner for toast notifications
+- **Real-time**: tRPC subscriptions for streaming
 
 ### Backend
-- **API Layer**: tRPC for type-safe API communication
+- **API Layer**: tRPC for type-safe API communication with subscriptions
 - **Database**: PostgreSQL with Prisma ORM
-- **AI Integration**: Google Gemini API
+- **AI Integration**: Google Gemini API with streaming support
 - **Authentication**: NextAuth.js v5 with Google OAuth and credentials
 - **Validation**: Zod for input validation
 - **Security**: bcryptjs for password hashing
@@ -209,7 +213,7 @@ Navigate to `http://localhost:3000`
 - Secure session handling
 - Input validation with Zod schemas
 
-### AI Career Counseling
+### AI Career Counseling & Streaming
 
 **Google Gemini Integration:**
 - Specialized system prompt for career counseling expertise
@@ -217,16 +221,26 @@ Navigate to `http://localhost:3000`
 - Timeout handling and error recovery
 - Model configuration with environment variables
 
+**Real-time Streaming Features:**
+- Live AI response streaming using tRPC subscriptions
+- Token-by-token response delivery for instant feedback
+- Optimistic UI updates with streaming message handling
+- Automatic session title generation on first message
+- Error handling and recovery for streaming failures
+
 **Conversation Flow:**
 - Persistent chat sessions with full message history
 - Real-time AI responses with typing indicators
 - Markdown rendering for formatted AI responses
 - Message timestamps and copy-to-clipboard functionality
+- Auto-generated session titles based on conversation content
 
 ### Chat Session Management
 
 **Session Operations:**
 - Create new chat sessions with custom titles
+- Auto-generate titles using AI based on first message
+- Update session titles manually
 - Soft delete with `deletedAt` timestamp for data recovery
 - Session search with real-time filtering
 - Active session highlighting in sidebar
@@ -235,6 +249,7 @@ Navigate to `http://localhost:3000`
 - PostgreSQL with Prisma ORM for reliable data storage
 - Optimistic updates for instant UI feedback
 - Cache invalidation and synchronization across components
+- Background refetching for data freshness
 
 ### Advanced Search & Navigation
 
@@ -254,6 +269,7 @@ Navigate to `http://localhost:3000`
 **Server State:**
 - `useInfiniteQuery` for paginated chat sessions and messages
 - `useMutation` for create, update, and delete operations
+- `useSubscription` for real-time streaming responses
 - Automatic cache invalidation and background refetching
 - Optimistic updates for instant user feedback
 
@@ -261,6 +277,7 @@ Navigate to `http://localhost:3000`
 - Intelligent cache updates on mutations
 - Cross-component state synchronization
 - Background refetching for data freshness
+- Streaming message cache management
 
 ## Database Design
 
@@ -311,13 +328,19 @@ Message {
 ## API Endpoints
 
 ### tRPC Procedures:
-- `auth.register` - User registration
-- `chat.getChatSessions` - Paginated chat sessions
-- `chat.searchChatSessions` - Search chat sessions
-- `chat.getMessages` - Paginated messages for a session
-- `chat.createChatSession` - Create new chat session
-- `chat.sendMessage` - Send message and get AI response
-- `chat.deleteChatSession` - Soft delete chat session
+
+**Authentication Router (`auth`):**
+- `auth.register` - User registration with email/password
+
+**Chat Router (`chat`):**
+- `chat.getChatSessions` - Paginated chat sessions with cursor-based pagination
+- `chat.searchChatSessions` - Search chat sessions with real-time filtering
+- `chat.getMessages` - Paginated messages for a session with infinite scroll
+- `chat.createChatSession` - Create new chat session with custom title
+- `chat.updateSessionTitle` - Update existing session title
+- `chat.sendMessage` - Send message and get AI response (non-streaming)
+- `chat.sendMessageStream` - **Real-time streaming AI responses** with tRPC subscription
+- `chat.deleteChatSession` - Soft delete chat session with recovery option
 
 ## Development Scripts
 
@@ -328,27 +351,11 @@ npm run start        # Start production server
 npm run lint         # Run ESLint
 ```
 
-## Environment Variables
-
-```env
-# Required
-DATABASE_URL="postgresql://username:password@host:port/database"
-GEMINI_API_KEY="your_gemini_api_key"
-NEXTAUTH_SECRET="your_nextauth_secret"
-NEXTAUTH_URL="http://localhost:3000"
-
-# Optional Google OAuth
-GOOGLE_CLIENT_ID="your_google_client_id"
-GOOGLE_CLIENT_SECRET="your_google_client_secret"
-
-# Optional AI Configuration
-AI_MODEL="gemini-1.5-flash"
-AI_TIMEOUT_MS="20000"
-```
-
 ## 📸 Features Showcase
 
 - **User Authentication**: Secure login with Google OAuth and email/password
+- **Real-time Streaming**: Live AI response streaming for instant user experience
+- **Auto-Title Generation**: AI-generated session titles based on conversation content
 - **Intelligent Conversations**: AI-powered career guidance with context awareness
 - **Persistent Sessions**: Never lose your conversation history
 - **Advanced Search**: Find specific conversations quickly
