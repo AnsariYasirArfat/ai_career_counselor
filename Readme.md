@@ -1,6 +1,6 @@
 # AI Career Counselor Chat Application
 
-A modern, full-stack AI-powered career counseling application built with Next.js 15, TypeScript, tRPC, TanStack Query, PostgreSQL, Prisma, and Google Gemini AI. This application provides intelligent career guidance through conversational AI, with persistent chat sessions and advanced search capabilities.
+A modern, full-stack AI-powered career counseling application built with Next.js 15, TypeScript, tRPC, TanStack Query, PostgreSQL, Prisma, and Google Gemini AI. This application provides intelligent career guidance through conversational AI with user authentication, persistent chat sessions, and advanced search capabilities.
 
 ## 🚀 Live Demo
 [View Live on Vercel](https://ai-career-counselor-chat.vercel.app/)
@@ -9,6 +9,7 @@ A modern, full-stack AI-powered career counseling application built with Next.js
 
 This project is a comprehensive career counseling platform featuring:
 
+- **User Authentication**: Secure login/signup with Google OAuth and email/password
 - **AI-Powered Career Guidance**: Intelligent conversations with Google Gemini AI for personalized career advice
 - **Persistent Chat Sessions**: Save and continue conversations with full message history
 - **Advanced Search**: Find and filter chat sessions with real-time search functionality
@@ -17,29 +18,31 @@ This project is a comprehensive career counseling platform featuring:
 - **Markdown Rendering**: Rich text formatting for AI responses with proper styling
 - **Cursor-based Pagination**: Efficient infinite scrolling for chat sessions and messages
 - **Soft Delete**: Safe deletion with data recovery capabilities for chat sessions
+- **Mobile-First Design**: Drawer navigation and responsive components for mobile devices
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-
 - **Framework**: Next.js 15.4.1 with App Router
 - **Language**: TypeScript 5 (strict mode)
 - **Styling**: Tailwind CSS 4
 - **State Management**: TanStack Query (React Query) for server state
-- **UI Components**: ShadCN component library & Radix UI primitives with custom styling
+- **UI Components**: ShadCN component library & Radix UI primitives
 - **Icons**: Lucide React
 - **Markdown**: React Markdown for AI response rendering
+- **Forms**: React Hook Form with Zod validation
+- **Notifications**: Sonner for toast notifications
 
 ### Backend
-
 - **API Layer**: tRPC for type-safe API communication
 - **Database**: PostgreSQL with Prisma ORM
 - **AI Integration**: Google Gemini API
+- **Authentication**: NextAuth.js v5 with Google OAuth and credentials
 - **Validation**: Zod for input validation
+- **Security**: bcryptjs for password hashing
 - **Deployment**: Vercel with Neon PostgreSQL
 
 ### Development Tools
-
 - **Database**: Prisma with migrations
 - **Type Safety**: End-to-end TypeScript
 - **Code Quality**: ESLint, Prettier
@@ -51,6 +54,7 @@ This project is a comprehensive career counseling platform featuring:
 - Node.js 18+ 
 - PostgreSQL database (Neon, Supabase, or local)
 - Google Gemini API key
+- Google OAuth credentials (optional)
 
 ### Clone the repository:
 ```bash
@@ -67,10 +71,27 @@ npm install
 Create a `.env.local` file:
 ```env
 DATABASE_URL="your_postgresql_connection_string"
+
 GEMINI_API_KEY="your_gemini_api_key"
-AI_MODEL="gemini-1.5-flash" # Optional
-AI_TIMEOUT_MS="20000" # Optional
+AI_MODEL="ai_model_name"
+
+# NextAuth Configuration
+AUTH_SECRET="http://localhost:3000"
+
+# Optional Google OAuth
+AUTH_GOOGLE_ID="your_google_client_id"
+AUTH_GOOGLE_SECRET="your_google_client_secret"
 ```
+
+## Screenshots
+![Desktop Image ](/public/screenshots/AI-Career-Counselor.png)
+![Desktop Image Light](/public/screenshots/AI-Career-Counselor-light.png)
+![Registration](/public/screenshots/register.png)
+![Login](/public/screenshots/login.png)
+![Chat Room](/public/screenshots/chat_light.png)
+![Edit Title](/public/screenshots/edit_title.png)
+![Search Chats](/public/screenshots/search.png)
+
 
 ### Database Setup:
 ```bash
@@ -86,45 +107,84 @@ npm run dev
 ### Open in your browser:
 Navigate to `http://localhost:3000`
 
-## ��️ Project Structure
+## Project Structure
 
 ```
 /
 ├─ app/                           # Next.js App Router
 │  ├─ api/trpc/[trpc]/            # tRPC API routes
-│  ├─ chats/[id]/                 # Individual chat pages
-│  ├─ search/                     # Search functionality
+│  ├─ api/auth/[...nextauth]/     # NextAuth.js API routes
+│  ├─ (protected)/                # Protected routes
+│  │  ├─ chats/[id]/              # Individual chat pages
+│  │  ├─ search/                  # Search functionality
+│  │  └─ layout.tsx               # Protected layout
+│  ├─ auth/                       # Authentication pages
+│  │  ├─ signin/                  # Sign in page
+│  │  ├─ signup/                  # Sign up page
+│  │  └─ layout.tsx                # Auth layout
 │  ├─ globals.css                 # Global styles
 │  ├─ layout.tsx                  # Root layout
-│  └─ page.tsx                    # Home page
+│  ├─ page.tsx                    # Home page
+│  ├─ error.tsx                   # Error boundary
+│  └─ not-found.tsx               # 404 page
 ├─ components/                    # React components
+│  ├─ auth/                       # Authentication components
+│  │  └─ GoogleButton.tsx         # Google OAuth button
 │  ├─ ChatRoom/                   # Chat interface components
-│  │  ├─ ChatInput.tsx            # Message input with file upload
+│  │  ├─ ChatInput.tsx            # Message input
 │  │  ├─ MessageList.tsx          # Message display with infinite scroll
 │  │  ├─ MarkdownRenderer.tsx     # AI response formatting
-│  │  └─ TypingIndicator.tsx      # Loading states
+│  │  ├─ TypingIndicator.tsx      # Loading states
+│  │  └─ ChatRoomSkeleton.tsx     # Chat loading skeleton
 │  ├─ Dashboard/                  # Main dashboard components
 │  │  ├─ Sidebar.tsx              # Chat sessions sidebar
+│  │  ├─ DrawerSidebar.tsx        # Mobile drawer sidebar
 │  │  ├─ ChatRoomList.tsx         # Sessions list with pagination
-│  │  ├─ NewChatModal.tsx         # Create new chat session
-│  │  └─ Header.tsx               # App header with navigation
+│  │  ├─ ChatRoomListSkeleton.tsx # Sessions loading skeleton
+│  │  ├─ NewChat.tsx              # New chat button
+│  │  ├─ NewChatModal.tsx         # Create new chat modal
+│  │  ├─ Header.tsx                # App header
+│  │  └─ UserMenu.tsx             # User dropdown menu
 │  ├─ Search/                     # Search functionality
 │  │  ├─ SearchBar.tsx            # Search input component
-│  │  └─ SearchChatRoomList.tsx   # Search results display
+│  │  ├─ SearchChatRoomList.tsx   # Search results display
+│  │  └─ SearchListSkeleton.tsx   # Search loading skeleton
 │  ├─ common/                     # Shared components
 │  │  ├─ AppShell.tsx             # Main app layout
+│  │  ├─ ConfirmModal.tsx         # Confirmation modal
+│  │  ├─ ModeToggle.tsx           # Theme toggle
 │  │  └─ SpinnerLoader.tsx        # Loading indicators
+│  ├─ providers/                  # Context providers
+│  │  ├─ AuthProvider.tsx         # Authentication provider
+│  │  ├─ theme-provider.tsx       # Theme provider
+│  │  └─ trpc-query-provider.tsx  # tRPC query provider
 │  └─ ui/                         # ShadCN UI components
+│     ├─ button.tsx               # Button component
+│     ├─ card.tsx                 # Card component
+│     ├─ dialog.tsx               # Modal dialog
+│     ├─ drawer.tsx                # Mobile drawer
+│     ├─ input.tsx                 # Input component
+│     ├─ skeleton.tsx              # Loading skeleton
+│     ├─ sonner.tsx                # Toast notifications
+│     └─ ...                       # Other UI components
 ├─ server/                        # tRPC backend
 │  ├─ routers/                    # API route handlers
+│  │  ├─ auth.ts                  # Authentication procedures
 │  │  └─ chat.ts                  # Chat-related procedures
 │  ├─ trpc.ts                     # tRPC configuration
 │  └─ index.ts                    # Root router
 ├─ lib/                           # Utility libraries
 │  ├─ ai/                         # AI integration
-│  │  └─ gemini.ts                # Google Gemini client
+│  │  ├─ gemini.ts                # Google Gemini client
+│  │  └─ prompts.ts               # AI system prompts
+│  ├─ auth.ts                     # NextAuth configuration
+│  ├─ error-handling.ts           # Error handling utilities
 │  ├─ prisma.ts                   # Database client
-│  └─ utils.ts                    # Helper functions
+│  ├─ utils.ts                    # Helper functions
+│  └─ validations/                # Zod validation schemas
+│     ├─ auth.ts                  # Auth validation schemas
+│     ├─ chat.ts                  # Chat validation schemas
+│     └─ index.ts                 # Validation exports
 ├─ hooks/                         # Custom React hooks
 │  ├─ useDebounce.ts              # Search debouncing
 │  └─ useInfiniteScroll.ts        # Infinite scroll logic
@@ -134,6 +194,20 @@ Navigate to `http://localhost:3000`
 ```
 
 ## Key Features & Implementation Details
+
+### User Authentication & Security
+
+**Authentication Methods:**
+- Google OAuth integration with NextAuth.js
+- Email/password authentication with bcryptjs hashing
+- Session management with secure JWT tokens
+- Protected routes with middleware
+
+**Security Features:**
+- Password hashing with bcryptjs
+- CSRF protection
+- Secure session handling
+- Input validation with Zod schemas
 
 ### AI Career Counseling
 
@@ -188,45 +262,32 @@ Navigate to `http://localhost:3000`
 - Cross-component state synchronization
 - Background refetching for data freshness
 
-## 🧩 How Core Features Are Implemented
-
-### Real-Time Chat Experience
-
-**Message Flow:**
-1. User sends message → Optimistic UI update
-2. Message saved to database → Real message replaces optimistic
-3. AI generates response → Typing indicator shown
-4. AI response saved → UI updated with formatted response
-
-**Performance Optimizations:**
-- Cursor-based pagination for efficient data loading
-- Context trimming for AI API calls
-- Debounced search to reduce API calls
-- Infinite scroll with virtual scrolling
-
-## Screenshots
-![Desktop Image 1](/public/screenshots/image1.png)
-![Desktop Image 2](/public/screenshots/image2.png)
-![Desktop Image 3](/public/screenshots/image3.png)
-![Desktop Image 4](/public/screenshots/image4.png)
-![Desktop Image 5](/public/screenshots/image5.png)
-![Desktop Image 6](/public/screenshots/image6.png)
-![Desktop Image 7](/public/screenshots/image7.png)
-
-![Mobile Image 8](/public/screenshots/image8.png)
-![Mobile Image 9](/public/screenshots/image9.png)
-![Mobile Image 10](/public/screenshots/image10.png)
-![Mobile Image 11](/public/screenshots/image11.png)
-### Database Design
+## Database Design
 
 **Schema Design:**
 ```sql
+User {
+  id: String (CUID)
+  name: String?
+  email: String (unique)
+  emailVerified: DateTime?
+  image: String?
+  passwordHash: String?
+  createdAt: DateTime
+  updatedAt: DateTime
+  accounts: Account[]
+  sessions: Session[]
+  ChatSession: ChatSession[]
+}
+
 ChatSession {
   id: String (CUID)
   title: String
+  userId: String (Foreign Key)
   createdAt: DateTime
   updatedAt: DateTime
   deletedAt: DateTime? (Soft delete)
+  user: User
   messages: Message[]
 }
 
@@ -236,37 +297,21 @@ Message {
   role: MessageRole (USER | ASSISTANT)
   content: String
   createdAt: DateTime
+  session: ChatSession
 }
 ```
 
 **Relationships:**
+- One-to-many: User → ChatSessions
 - One-to-many: ChatSession → Messages
+- One-to-many: User → Accounts (OAuth)
+- One-to-many: User → Sessions
 - Soft delete implementation for data recovery
-- Proper indexing for performance
-
-### AI Integration Architecture
-
-**Google Gemini Setup:**
-- Environment-based API key management
-- Model selection with fallbacks
-- Timeout and error handling
-- Context window management
-
-## Environment Variables
-
-```env
-# Required
-DATABASE_URL="postgresql://username:password@host:port/database"
-GEMINI_API_KEY="your_gemini_api_key"
-
-# Optional
-AI_MODEL="gemini-1.5-flash"
-AI_TIMEOUT_MS="20000"
-```
 
 ## API Endpoints
 
 ### tRPC Procedures:
+- `auth.register` - User registration
 - `chat.getChatSessions` - Paginated chat sessions
 - `chat.searchChatSessions` - Search chat sessions
 - `chat.getMessages` - Paginated messages for a session
@@ -283,15 +328,36 @@ npm run start        # Start production server
 npm run lint         # Run ESLint
 ```
 
+## Environment Variables
+
+```env
+# Required
+DATABASE_URL="postgresql://username:password@host:port/database"
+GEMINI_API_KEY="your_gemini_api_key"
+NEXTAUTH_SECRET="your_nextauth_secret"
+NEXTAUTH_URL="http://localhost:3000"
+
+# Optional Google OAuth
+GOOGLE_CLIENT_ID="your_google_client_id"
+GOOGLE_CLIENT_SECRET="your_google_client_secret"
+
+# Optional AI Configuration
+AI_MODEL="gemini-1.5-flash"
+AI_TIMEOUT_MS="20000"
+```
+
 ## 📸 Features Showcase
 
+- **User Authentication**: Secure login with Google OAuth and email/password
 - **Intelligent Conversations**: AI-powered career guidance with context awareness
 - **Persistent Sessions**: Never lose your conversation history
 - **Advanced Search**: Find specific conversations quickly
-- **Responsive Design**: Works seamlessly on all devices
+- **Responsive Design**: Works seamlessly on all devices with mobile drawer
 - **Real-time Updates**: Instant feedback with optimistic UI
 - **Rich Formatting**: Markdown support for AI responses
 - **Data Safety**: Soft delete with recovery options
+- **Theme Support**: Dark/light mode with smooth transitions
+
 ---
 
 ### Ansari Yaseer Arfat
