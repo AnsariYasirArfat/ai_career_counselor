@@ -1,33 +1,33 @@
 "use client";
 import { useParams } from "next/navigation";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MessageList from "@/components/ChatRoom/MessageList";
 import ChatInput from "@/components/ChatRoom/ChatInput";
 import Link from "next/link";
 import TypingIndicator from "@/components/ChatRoom/TypingIndicator";
 import ChatRoomSkeleton from "@/components/ChatRoom/ChatRoomSkeleton";
-import { MessageCircle, AlertCircle, RefreshCw } from "lucide-react";
-import { useTRPC, useTRPCClient } from "@/app/_trpc/client";
 import {
-  useInfiniteQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+  MessageCircle,
+  AlertCircle,
+  RefreshCw,
+  ChevronDown,
+} from "lucide-react";
+import { useTRPC } from "@/app/_trpc/client";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@trpc/tanstack-react-query";
+import { handleUnauthorizedError } from "@/lib/error-handling";
 
 const PAGE_SIZE = 10;
 
 export default function ChatRoomPage() {
   const { id } = useParams() as { id: string };
   const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
 
   const [failedUserText, setFailedUserText] = useState<string | null>(null);
-
-  const [isStreaming, setIsStreaming] = useState(false);
   const [subscriptionInput, setSubscriptionInput] = useState<string>("");
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   const messagesListOpts = trpc.chat.getMessages.infiniteQueryOptions(
     { sessionId: id, limit: PAGE_SIZE, cursor: undefined },
@@ -41,8 +41,6 @@ export default function ChatRoomPage() {
     { getNextPageParam: (lastPage) => lastPage.nextCursor ?? null }
   );
   const sessionsListKey = sessionsListOpts.queryKey;
-
-  const lastTempUserIdRef = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const scrollDown = () => {
@@ -70,90 +68,6 @@ export default function ChatRoomPage() {
     [data]
   );
 
-  const sendMutation = useMutation({
-    mutationFn: ({ content }: { content: string; isRetry: boolean }) =>
-      trpcClient.chat.sendMessage.mutate({ sessionId: id, content }),
-
-    onMutate: async ({ content, isRetry }) => {
-      await queryClient.cancelQueries({ queryKey: messagesListKey });
-      if (!isRetry) {
-        setFailedUserText(null);
-        const previous = queryClient.getQueryData(messagesListKey);
-
-        const tmpUserId = `temp-user-${Date.now()}`;
-        lastTempUserIdRef.current = tmpUserId;
-
-        const tempUserMessage = {
-          id: tmpUserId,
-          sessionId: id,
-          role: "USER" as const,
-          content,
-          createdAt: new Date().toISOString(),
-        };
-
-        queryClient.setQueryData(messagesListKey, (old: any) => {
-          if (!old) return old;
-          const pages = old.pages.map((p: any, idx: number) => {
-            if (idx !== 0) return p;
-            const next = [tempUserMessage, ...(p.messages ?? [])];
-            return { ...p, messages: next };
-          });
-          return { ...old, pages };
-        });
-        scrollDown();
-
-        return { previous, tempUserMessage };
-      }
-      return { previous: null, tempUserMessage: null };
-    },
-
-    onSuccess: async ({ userMessage, aiMessage }, { isRetry }, context) => {
-      setFailedUserText(null);
-      const tmpMsgId = !isRetry
-        ? context?.tempUserMessage?.id
-        : lastTempUserIdRef.current;
-
-      queryClient.setQueryData(messagesListKey, (old: any) => {
-        if (!old) return old;
-        const pages = old.pages.map((p: any, idx: number) => {
-          if (idx !== 0) return p;
-          const withoutTemp = (p.messages ?? []).filter(
-            (m: any) => m.id !== tmpMsgId
-          );
-          const next = [aiMessage, userMessage, ...withoutTemp];
-
-          return { ...p, messages: next };
-        });
-        return { ...old, pages };
-      });
-
-      queryClient.setQueryData(sessionsListKey, (old: any) => {
-        if (!old) return old;
-        const pages = old.pages.map((p: any, idx: number) => {
-          if (idx !== 0) return p;
-          const list = p.sessions ?? [];
-          const index = list.findIndex((s: any) => s.id === id);
-          if (index === -1) return p;
-
-          const current = list[index];
-          const updated = {
-            ...current,
-            updatedAt: aiMessage.createdAt ?? new Date().toISOString(),
-            message: [{ ...aiMessage }],
-          };
-          const without = list.filter((_: any, i: number) => i !== index);
-          return { ...p, sessions: [updated, ...without] };
-        });
-        return { ...old, pages };
-      });
-      scrollDown();
-    },
-
-    onError: (_err, { isRetry }, context) => {
-      !isRetry && setFailedUserText(context?.tempUserMessage?.content || null);
-    },
-  });
-
   // Helper function to update messages in cache
   const updateMessagesCache = useCallback(
     (updater: (messages: any[]) => any[]) => {
@@ -171,7 +85,7 @@ export default function ChatRoomPage() {
 
   // Helper function to update sessions cache
   const updateSessionsCache = useCallback(
-    (aiMessage: any) => {
+    (updatedSession: any) => {
       queryClient.setQueryData(sessionsListKey, (old: any) => {
         if (!old) return old;
         const pages = old.pages.map((p: any, idx: number) => {
@@ -179,15 +93,8 @@ export default function ChatRoomPage() {
           const list = p.sessions ?? [];
           const index = list.findIndex((s: any) => s.id === id);
           if (index === -1) return p;
-
-          const current = list[index];
-          const updated = {
-            ...current,
-            updatedAt: aiMessage.createdAt ?? new Date().toISOString(),
-            message: [{ ...aiMessage }],
-          };
           const without = list.filter((_: any, i: number) => i !== index);
-          return { ...p, sessions: [updated, ...without] };
+          return { ...p, sessions: [updatedSession, ...without] };
         });
         return { ...old, pages };
       });
@@ -206,7 +113,6 @@ export default function ChatRoomPage() {
             if (data.startsWith('{"done":true')) {
               const parsed = JSON.parse(data);
               if (parsed.done) {
-                setIsStreaming(false);
                 setFailedUserText(null);
                 setSubscriptionInput("");
 
@@ -227,7 +133,7 @@ export default function ChatRoomPage() {
                   ];
                 });
 
-                updateSessionsCache(parsed.aiMessage);
+                updateSessionsCache(parsed.updatedSession);
                 scrollDown();
               }
             } else {
@@ -259,24 +165,42 @@ export default function ChatRoomPage() {
             }
           }
         },
-        onError: (error) => {
-          console.error("Streaming error:", error);
-          setIsStreaming(false);
-          setFailedUserText(subscriptionInput);
-          setSubscriptionInput("");
-
-          // Remove streaming message on error
-          updateMessagesCache((messages) =>
-            messages.filter((m: any) => !m.id.startsWith("streaming-"))
-          );
+        onError: async (error) => {
+          console.error("------connection error-----", error);
+          const wasUnauthorized = await handleUnauthorizedError(error, "/");
+          if (wasUnauthorized) {
+            return;
+          }
+          handleStreamingError();
         },
       }
     )
   );
 
+  const isConnecting = streamingSubscription.status === "connecting";
+  const isPending = streamingSubscription.status === "pending";
+  const isErrorStreaming = streamingSubscription.status === "error";
+
+  // Clean up function for error handling
+  const handleStreamingError = useCallback(() => {
+    subscriptionInput && setFailedUserText(subscriptionInput);
+    setSubscriptionInput("");
+    streamingSubscription.status = "error";
+    updateMessagesCache((messages) =>
+      messages.filter((m: any) => !m.id.startsWith("streaming-"))
+    );
+  }, [subscriptionInput, updateMessagesCache]);
+
+  useEffect(() => {
+    const hasError = isErrorStreaming || !!streamingSubscription.error;
+    if (hasError) {
+      console.error("Serialized error detected, cleaning up...");
+      handleStreamingError();
+    }
+  }, [streamingSubscription]);
+
   const startStreaming = useCallback(
     (content: string, isRetry: boolean = false) => {
-      setIsStreaming(true);
       setFailedUserText(null);
       setSubscriptionInput(content);
 
@@ -298,23 +222,36 @@ export default function ChatRoomPage() {
     [id, updateMessagesCache]
   );
 
-  const isConnecting = streamingSubscription.status === "connecting";
-  const isPending = streamingSubscription.status === "pending";
-  const isErrorStreaming = streamingSubscription.status === "error";
-
   const handleSend = useCallback(
     (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || isPending || isStreaming) return;
+      if (!trimmed || isPending) return;
       startStreaming(trimmed, false);
     },
-    [startStreaming, isStreaming]
+    [startStreaming]
   );
 
   const handleRetry = useCallback(() => {
-    if (!failedUserText || isPending || isStreaming) return;
+    if (!failedUserText || isPending) return;
     startStreaming(failedUserText, true);
-  }, [failedUserText, startStreaming, isStreaming]);
+  }, [failedUserText, startStreaming]);
+
+  useEffect(() => {
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) return;
+    const handleScroll = () => {
+      const isAtBottom = scrollElement.scrollTop >= -500;
+      setShowScrollButton(!isAtBottom);
+    };
+
+    scrollElement.addEventListener("scroll", handleScroll);
+
+    handleScroll();
+
+    return () => {
+      scrollElement.removeEventListener("scroll", handleScroll);
+    };
+  }, [messages.length]);
 
   if (isLoading) {
     return <ChatRoomSkeleton />;
@@ -340,7 +277,7 @@ export default function ChatRoomPage() {
 
   return (
     <div className="flex flex-col flex-1 h-full min-h-0 w-full">
-      <div className="flex-1 min-h-0 flex flex-col px-4 ">
+      <div className="flex-1 min-h-0 flex flex-col">
         {hasAny ? (
           <MessageList
             messages={messages.map((m) => ({
@@ -364,9 +301,9 @@ export default function ChatRoomPage() {
           </div>
         )}
 
-        {failedUserText && isErrorStreaming && (
-          <div className="pb-1 max-w-[760px] w-full mx-auto">
-            <div className="flex items-center gap-3 px-5 py-3  max-w-[80%] border border-red-500  rounded-3xl rounded-tl-md">
+        {isErrorStreaming && (
+          <div className="pb-1 max-w-[920px] w-full mx-auto">
+            <div className="flex flex-wrap items-center gap-3 px-5 py-3  max-w-[80%] border border-red-500  rounded-3xl rounded-tl-md">
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
               <div className="flex-1">
                 <div className="text-sm font-medium text-red-500">
@@ -390,8 +327,8 @@ export default function ChatRoomPage() {
           </div>
         )}
 
-        {(isConnecting || isPending) && isStreaming && (
-          <div className="pb-1 max-w-[760px] w-full mx-auto">
+        {(isConnecting || isPending) && (
+          <div className="pb-1 max-w-[920px] w-full mx-auto">
             <TypingIndicator
               text={
                 isConnecting
@@ -405,10 +342,27 @@ export default function ChatRoomPage() {
         )}
       </div>
 
-      <ChatInput
-        onSend={handleSend}
-        loading={!!failedUserText || isErrorStreaming || isPending}
-      />
+      <div className="w-full py-2">
+        <div className="max-w-[920px] mx-auto relative">
+          <ChatInput
+            onSend={handleSend}
+            loading={!!failedUserText || isErrorStreaming || isPending}
+          />
+          {/* Scroll to bottom button */}
+          {showScrollButton && (
+
+            <Button
+            variant={"ghost"}
+              onClick={scrollDown}
+              className="absolute !-top-6 -translate-y-1/2 right-1/2 sm:right-0 -translate-x-1/2 sm:translate-x-0 z-50 rounded-full w-6 h-6 sm:w-8 sm:h-8 shadow-lg border border-oration-orange bg-oration-orange/70 hover:!bg-oration-orange/40 transition-all duration-200"
+              size="icon"
+              title="Scroll to bottom"
+            >
+              <ChevronDown className="text-white hover:!text-white" />
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

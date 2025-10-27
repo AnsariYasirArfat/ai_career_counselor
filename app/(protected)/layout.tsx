@@ -12,7 +12,7 @@ export default async function ProtectedLayout({
   }
 
   return (
-    <div className="flex flex-col items-center flex-1 w-full min-h-0 px-4">
+    <div className="flex flex-col items-center flex-1 w-full min-h-0 px-2 sm:px-4">
       {children}
     </div>
   );

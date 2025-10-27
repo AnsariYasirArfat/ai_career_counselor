@@ -2,6 +2,7 @@ import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import {
+  generateAutoSessionTitle,
   generateCareerReply,
   generateCareerStreamResponse,
   PlainMessage,
@@ -181,6 +182,51 @@ export const chatRouter = router({
       }
     }),
 
+  updateSessionTitle: protectedProcedure
+    .input(
+      z.object({
+        title: z.string().min(1, "Title is required"),
+        sessionId: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const session = await ctx.prisma.chatSession.findFirst({
+          where: {
+            id: input.sessionId,
+            userId: ctx.user.id,
+            deletedAt: null,
+          },
+        });
+
+        if (!session) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Chat session not found or deleted",
+          });
+        }
+
+        const updatedSession = await ctx.prisma.chatSession.update({
+          where: {
+            id: input.sessionId,
+            userId: ctx.user.id,
+            deletedAt: null,
+          },
+          data: { title: input.title.trim(), updatedAt: new Date() },
+        });
+
+        return updatedSession;
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update session title",
+        });
+      }
+    }),
+
   sendMessage: protectedProcedure
     .input(
       z.object({
@@ -279,7 +325,7 @@ export const chatRouter = router({
         content: z.string().min(1, "Message cannot be empty"),
       })
     )
-    .subscription(async function* ({ input, ctx }) {
+    .subscription(async function* ({ input, ctx, signal }) {
       try {
         const session = await ctx.prisma.chatSession.findFirst({
           where: {
@@ -336,25 +382,38 @@ export const chatRouter = router({
             content: aiText,
           },
         });
+        let updatedSession;
+        if (recent.length === 0) {
+          const sessionTitle = await generateAutoSessionTitle(input.content);
 
-        await ctx.prisma.chatSession.update({
-          where: { id: input.sessionId, userId: ctx.user.id },
-          data: { updatedAt: new Date() },
-        });
+          updatedSession = await ctx.prisma.chatSession.update({
+            where: { id: input.sessionId, userId: ctx.user.id },
+            data: { title: sessionTitle, updatedAt: new Date() },
+          });
+        } else {
+          updatedSession = await ctx.prisma.chatSession.update({
+            where: { id: input.sessionId, userId: ctx.user.id },
+            data: { updatedAt: new Date() },
+          });
+        }
 
         yield JSON.stringify({
           done: true,
           userMessage,
           aiMessage,
+          updatedSession,
         });
       } catch (error) {
-        console.error("Message streaming failed:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to AI response";
+        console.error("Message streaming failed:", errorMessage);
         if (error instanceof TRPCError) {
           throw error;
         }
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send message",
+          message: errorMessage,
+          cause: error instanceof Error ? error : undefined,
         });
       }
     }),

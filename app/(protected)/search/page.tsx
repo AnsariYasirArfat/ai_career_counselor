@@ -35,7 +35,7 @@ export default function SearchPage() {
   const rooms = (data?.pages ?? []).flatMap((p) => p.sessions);
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col max-w-[760px]">
+    <div className="w-full flex-1 min-h-0 flex flex-col max-w-[920px]">
       <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold py-8">
         Search
       </h1>

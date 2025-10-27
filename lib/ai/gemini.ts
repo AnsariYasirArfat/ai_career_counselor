@@ -92,3 +92,36 @@ export async function* generateCareerStreamResponse(
     throw new Error("AI service temporarily unavailable. Please try again.");
   }
 }
+
+export async function generateAutoSessionTitle(
+  userFirstInput: string,
+  model: string = DEFAULT_MODEL!
+) {
+  if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is missing");
+  const TITLE_PROMPT = `You are a title generator for AI career counseling sessions.
+  
+  Given the user's first message, create a concise, engaging session title (3-8 words) that captures the main topic.
+  
+  Guidelines:
+  - If career-related (e.g., jobs, skills, resume, interviews, goals), make it descriptive and motivational (e.g., "Tech Career Path Exploration" for "How do I start in tech?").
+  - If non-career (e.g., general chat), create a neutral, open title redirecting to careers (e.g., "Career Guidance Kickoff" for "Hi, what's up?").
+  - Keep it short, professional, no questions, use keywords from message.
+  - Always career-focused if possible—assume context is counseling.
+  
+  User message: "${userFirstInput}"
+  
+  Output ONLY the title, nothing else.`;
+  
+  try {
+    const response = await genAI.models.generateContent({
+      model,
+      contents: TITLE_PROMPT.trim(),
+    });
+
+    const title = response.text || "New Career Counseling Session";
+    return title;
+  } catch (error) {
+    console.error("Error generating session title:", error);
+    return "New Career Counseling Session";
+  }
+}
