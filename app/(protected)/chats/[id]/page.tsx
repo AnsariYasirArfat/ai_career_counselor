@@ -6,7 +6,12 @@ import ChatInput from "@/components/ChatRoom/ChatInput";
 import Link from "next/link";
 import TypingIndicator from "@/components/ChatRoom/TypingIndicator";
 import ChatRoomSkeleton from "@/components/ChatRoom/ChatRoomSkeleton";
-import { MessageCircle, AlertCircle, RefreshCw } from "lucide-react";
+import {
+  MessageCircle,
+  AlertCircle,
+  RefreshCw,
+  ChevronDown,
+} from "lucide-react";
 import { useTRPC } from "@/app/_trpc/client";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -21,8 +26,8 @@ export default function ChatRoomPage() {
   const queryClient = useQueryClient();
 
   const [failedUserText, setFailedUserText] = useState<string | null>(null);
-
   const [subscriptionInput, setSubscriptionInput] = useState<string>("");
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   const messagesListOpts = trpc.chat.getMessages.infiniteQueryOptions(
     { sessionId: id, limit: PAGE_SIZE, cursor: undefined },
@@ -231,6 +236,23 @@ export default function ChatRoomPage() {
     startStreaming(failedUserText, true);
   }, [failedUserText, startStreaming]);
 
+  useEffect(() => {
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) return;
+    const handleScroll = () => {
+      const isAtBottom = scrollElement.scrollTop >= -500;
+      setShowScrollButton(!isAtBottom);
+    };
+
+    scrollElement.addEventListener("scroll", handleScroll);
+
+    handleScroll();
+
+    return () => {
+      scrollElement.removeEventListener("scroll", handleScroll);
+    };
+  }, [messages.length]);
+
   if (isLoading) {
     return <ChatRoomSkeleton />;
   }
@@ -255,7 +277,7 @@ export default function ChatRoomPage() {
 
   return (
     <div className="flex flex-col flex-1 h-full min-h-0 w-full">
-      <div className="flex-1 min-h-0 flex flex-col px-4 ">
+      <div className="flex-1 min-h-0 flex flex-col px-4">
         {hasAny ? (
           <MessageList
             messages={messages.map((m) => ({
@@ -320,10 +342,25 @@ export default function ChatRoomPage() {
         )}
       </div>
 
-      <ChatInput
-        onSend={handleSend}
-        loading={!!failedUserText || isErrorStreaming || isPending}
-      />
+      <div className="w-full px-4 py-3 ">
+        <div className="max-w-[760px] mx-auto relative">
+          <ChatInput
+            onSend={handleSend}
+            loading={!!failedUserText || isErrorStreaming || isPending}
+          />
+          {/* Scroll to bottom button */}
+          {showScrollButton && (
+            <Button
+              onClick={scrollDown}
+              className="absolute !bottom-20 right-0 z-50 rounded-full w-8 h-8 shadow-lg bg-transparent border border-oration-orange hover:bg-oration-orange/50 transition-all duration-200"
+              size="icon"
+              title="Scroll to bottom"
+            >
+              <ChevronDown className="w-5 h-5 text-oration-orange" />
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
