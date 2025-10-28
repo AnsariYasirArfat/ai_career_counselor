@@ -21,8 +21,8 @@ import {
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { CHAT_SESSIONS_PER_PAGE } from "@/constant/pageLimits";
 
-const ITEMS_PER_PAGE = 10;
 
 export default function ChatRoomList({
   onRoomClick,
@@ -41,7 +41,7 @@ export default function ChatRoomList({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const listOpts = trpc.chat.getChatSessions.infiniteQueryOptions(
-    { limit: ITEMS_PER_PAGE, cursor: null },
+    { limit: CHAT_SESSIONS_PER_PAGE, cursor: null },
     { getNextPageParam: (lastPage) => lastPage.nextCursor ?? null }
   );
   const listKey = listOpts.queryKey;
@@ -128,6 +128,21 @@ export default function ChatRoomList({
       inputRef.current.focus();
     }
   }, [editingId]);
+
+
+
+  // Auto-fetch until the scroll container is actually scrollable (or no more pages)
+  useEffect(() => {
+    const el = document.getElementById("chatroom-scrollable");
+    if (!el) return;
+
+    // If content height <= container height, there is nothing to scroll,
+    // so fetch the next page (if available). This effect will re-run after data updates.
+    if (hasNextPage && !isFetchingNextPage && el.scrollHeight <= el.clientHeight) {
+      fetchNextPage();
+    }
+  }, [sessions.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) =>

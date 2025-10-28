@@ -8,8 +8,7 @@ import { useTRPC } from "@/app/_trpc/client";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import NewChatButton from "@/components/common/NewChatButton";
 import { Plus } from "lucide-react";
-
-const ITEMS_PER_PAGE = 10;
+import { SEARCH_SESSIONS_PER_PAGE } from "@/constant/pageLimits";
 
 export default function SearchPage() {
   const trpc = useTRPC();
@@ -21,13 +20,11 @@ export default function SearchPage() {
     data,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage,
-    status,
     isLoading,
     isFetching,
   } = useInfiniteQuery(
     trpc.chat.searchChatSessions.infiniteQueryOptions(
-      { query: effectiveQ, limit: ITEMS_PER_PAGE, cursor: null },
+      { query: effectiveQ, limit: SEARCH_SESSIONS_PER_PAGE, cursor: null },
       {
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? null,
       }
