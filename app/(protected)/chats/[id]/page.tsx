@@ -17,8 +17,10 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@trpc/tanstack-react-query";
 import { handleUnauthorizedError } from "@/lib/error-handling";
-
-const PAGE_SIZE = 10;
+import {
+  CHAT_SESSIONS_PER_PAGE,
+  MESSAGE_PER_PAGE,
+} from "@/constant/pageLimits";
 
 export default function ChatRoomPage() {
   const { id } = useParams() as { id: string };
@@ -30,14 +32,13 @@ export default function ChatRoomPage() {
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   const messagesListOpts = trpc.chat.getMessages.infiniteQueryOptions(
-    { sessionId: id, limit: PAGE_SIZE, cursor: undefined },
+    { sessionId: id, limit: MESSAGE_PER_PAGE, cursor: undefined },
     { getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined }
   );
   const messagesListKey = messagesListOpts.queryKey;
 
-  const SESSIONS_PAGE_SIZE = 10;
   const sessionsListOpts = trpc.chat.getChatSessions.infiniteQueryOptions(
-    { limit: SESSIONS_PAGE_SIZE, cursor: null },
+    { limit: CHAT_SESSIONS_PER_PAGE, cursor: null },
     { getNextPageParam: (lastPage) => lastPage.nextCursor ?? null }
   );
   const sessionsListKey = sessionsListOpts.queryKey;
@@ -350,9 +351,8 @@ export default function ChatRoomPage() {
           />
           {/* Scroll to bottom button */}
           {showScrollButton && (
-
             <Button
-            variant={"ghost"}
+              variant={"ghost"}
               onClick={scrollDown}
               className="absolute !-top-6 -translate-y-1/2 right-1/2 sm:right-0 -translate-x-1/2 sm:translate-x-0 z-50 rounded-full w-6 h-6 sm:w-8 sm:h-8 shadow-lg border border-oration-orange bg-oration-orange/70 hover:!bg-oration-orange/40 transition-all duration-200"
               size="icon"
