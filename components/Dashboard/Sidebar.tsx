@@ -8,7 +8,7 @@ import Link from "next/link";
 import ChatRoomList from "./ChatRoomList";
 import { useSession } from "next-auth/react";
 import ChatRoomListSkeleton from "./ChatRoomListSkeleton";
-import NewChat from "./NewChat";
+import NewChatButton from "../common/NewChatButton";
 
 interface SidebarProps {
   closeDrawer?: () => void;
@@ -60,8 +60,24 @@ export default function Sidebar({ closeDrawer, isDrawer }: SidebarProps) {
         </Link>
       </div>
 
-      <NewChat closeDrawer={closeDrawer} collapsed={collapsed} />
-
+      <div
+        className={cn(
+          "flex items-center px-2",
+          collapsed ? "justify-center " : "justify-between"
+        )}
+      >
+        <NewChatButton
+          variant="ghost"
+          className={cn(
+            "w-full hover:!bg-zinc-400/20 cursor-pointer",
+            collapsed ? "justify-center " : "justify-start"
+          )}
+          onSuccess={() => closeDrawer?.()}
+        >
+          <SquarePen />
+          <span className={cn("", collapsed && "hidden")}>New Chat</span>
+        </NewChatButton>
+      </div>
       <div
         id="chatroom-scrollable"
         className="flex-1 overflow-y-auto p-2"

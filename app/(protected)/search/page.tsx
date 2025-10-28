@@ -6,6 +6,8 @@ import SearchListSkeleton from "@/components/Search/SearchListSkeleton";
 import SearchChatRoomList from "@/components/Search/SearchChatRoomList";
 import { useTRPC } from "@/app/_trpc/client";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import NewChatButton from "@/components/common/NewChatButton";
+import { Plus } from "lucide-react";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -36,9 +38,20 @@ export default function SearchPage() {
 
   return (
     <div className="w-full flex-1 min-h-0 flex flex-col max-w-[920px]">
-      <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold py-8">
-        Search
-      </h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold">
+          Search
+        </h1>
+
+        <NewChatButton
+          variant="outline"
+          size="sm"
+          className="hover:bg-gray-50 dark:hover:bg-gray-800"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          New Chat
+        </NewChatButton>
+      </div>
 
       <SearchBar
         value={query}

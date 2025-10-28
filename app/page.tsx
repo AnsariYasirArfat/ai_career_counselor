@@ -1,6 +1,4 @@
 "use client";
-import { useState, useEffect } from "react";
-import NewChatModal from "@/components/Dashboard/NewChatModal";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MessageCircle, Shield, Zap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,9 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import NewChatButton from "@/components/common/NewChatButton";
 
 export default function Home() {
-  const [modalOpen, setModalOpen] = useState(false);
   const { data: session, status } = useSession();
 
   if (status === "loading") {
@@ -94,15 +92,13 @@ export default function Home() {
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
-              <Button
-                onClick={() => setModalOpen(true)}
+              <NewChatButton
                 size="lg"
                 className="bg-oration-orange hover:bg-oration-orange/90 text-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
               >
-                Start New Chat
                 <MessageCircle className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-              <NewChatModal open={modalOpen} setOpen={setModalOpen} />
+                Start New Chat
+              </NewChatButton>
               <Link href="/search">
                 <Button
                   variant="outline"
