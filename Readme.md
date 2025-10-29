@@ -1,6 +1,10 @@
-# AI Career Counselor Chat Application
+<p align="center">
+  <img src="public/logo.png" alt="GuideLane AI logo" width="48" height="48" />
+</p>
 
-A modern, full-stack AI-powered career counseling application built with Next.js 15, TypeScript, tRPC, TanStack Query, PostgreSQL, Prisma, and Google Gemini AI. This application provides intelligent career guidance through conversational AI with user authentication, persistent chat sessions, real-time streaming, and advanced search capabilities.
+## GuideLane AI – An AI Career Counselor Chat Application
+GuideLane AI is a private, conversational career counselor built on Next.js, tRPC, Prisma, and Google Gemini. It helps you explore paths, plan skills, and make confident decisions with a fast, modern UX.
+
 
 
 ## 🚀 Live Demo
@@ -145,8 +149,6 @@ Navigate to `http://localhost:3000`
 │  │  ├─ DrawerSidebar.tsx        # Mobile drawer sidebar
 │  │  ├─ ChatRoomList.tsx         # Sessions list with pagination
 │  │  ├─ ChatRoomListSkeleton.tsx # Sessions loading skeleton
-│  │  ├─ NewChat.tsx              # New chat button
-│  │  ├─ NewChatModal.tsx         # Create new chat modal
 │  │  ├─ Header.tsx                # App header
 │  │  └─ UserMenu.tsx             # User dropdown menu
 │  ├─ Search/                     # Search functionality
@@ -157,6 +159,7 @@ Navigate to `http://localhost:3000`
 │  │  ├─ AppShell.tsx             # Main app layout
 │  │  ├─ ConfirmModal.tsx         # Confirmation modal
 │  │  ├─ ModeToggle.tsx           # Theme toggle
+│  │  ├─ NewChatButton.tsx        # Common New Chat Button
 │  │  └─ SpinnerLoader.tsx        # Loading indicators
 │  ├─ providers/                  # Context providers
 │  │  ├─ AuthProvider.tsx         # Authentication provider

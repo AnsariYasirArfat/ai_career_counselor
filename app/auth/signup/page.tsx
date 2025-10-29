@@ -202,7 +202,7 @@ export default function SignupPage() {
 
           <Button
             type="submit"
-            className="w-full bg-oration-orange hover:bg-oration-orange/90"
+            className="w-full bg-ai-orange hover:bg-ai-orange/90"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -223,7 +223,7 @@ export default function SignupPage() {
           </span>
           <Link
             href="/auth/signin"
-            className="font-medium text-oration-orange hover:text-oration-orange/80"
+            className="font-medium text-ai-orange hover:text-ai-orange/80"
           >
             Sign in
           </Link>

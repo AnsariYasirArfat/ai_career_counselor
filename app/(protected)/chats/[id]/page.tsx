@@ -266,7 +266,7 @@ export default function ChatRoomPage() {
         </div>
         <div className="text-gray-500 mb-6">Please try again.</div>
         <Link href="/" passHref>
-          <button className="px-6 py-2 rounded bg-oration-orange hover:bg-oration-orange/80 transition">
+          <button className="px-6 py-2 rounded bg-ai-orange hover:bg-ai-orange/80 transition">
             Go Home
           </button>
         </Link>
@@ -354,7 +354,7 @@ export default function ChatRoomPage() {
             <Button
               variant={"ghost"}
               onClick={scrollDown}
-              className="absolute !-top-6 -translate-y-1/2 right-1/2 sm:right-0 -translate-x-1/2 sm:translate-x-0 z-50 rounded-full w-6 h-6 sm:w-8 sm:h-8 shadow-lg border border-oration-orange bg-oration-orange/70 hover:!bg-oration-orange/40 transition-all duration-200"
+              className="absolute !-top-6 -translate-y-1/2 right-1/2 sm:right-0 -translate-x-1/2 sm:translate-x-0 z-50 rounded-full w-6 h-6 sm:w-8 sm:h-8 shadow-lg border border-ai-orange bg-ai-orange/70 hover:!bg-ai-orange/40 transition-all duration-200"
               size="icon"
               title="Scroll to bottom"
             >

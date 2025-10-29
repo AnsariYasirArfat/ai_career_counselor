@@ -10,7 +10,7 @@ export default function NotFound() {
       <p className="text-zinc-500 mb-6">
         Sorry, the page you are looking for does not exist or has been moved.
       </p>
-      <Link href="/" className="px-6 py-2 rounded bg-oration-orange text-white hover:bg-oration-orange/80 transition">
+      <Link href="/" className="px-6 py-2 rounded bg-ai-orange text-white hover:bg-ai-orange/80 transition">
         Go Home
       </Link>
     </div>
