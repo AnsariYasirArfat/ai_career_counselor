@@ -17,7 +17,7 @@ export default function SearchBar({ value, loading, onChange, onClear }: SearchB
       </span>
       <input
         type="text"
-        className="w-full pl-10 pr-10 py-3 rounded-full bg-transparent border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-oration-orange transition"
+        className="w-full pl-10 pr-10 py-3 rounded-full bg-transparent border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-ai-orange transition"
         placeholder="Search for chats"
         value={value}
         onChange={(e) => onChange(e.target.value)}

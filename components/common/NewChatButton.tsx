@@ -1,3 +1,4 @@
+"use client"
 import React from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
@@ -12,7 +13,8 @@ interface NewChatButtonProps
   loadingText?: string;
 }
 
-export default function NewChatButton({
+export default function 
+NewChatButton({
   onSuccess,
   onError,
   loadingText = "Creating...",

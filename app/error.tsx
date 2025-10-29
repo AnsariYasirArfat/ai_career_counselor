@@ -17,13 +17,13 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
       </p>
       <button
         onClick={() => reset()}
-        className="px-6 py-2 rounded bg-oration-orange text-white hover:bg-oration-orange/80 transition mb-2"
+        className="px-6 py-2 rounded bg-ai-orange text-white hover:bg-ai-orange/80 transition mb-2"
       >
         Try Again
       </button>
       <Link
         href="/"
-        className="text-oration-orange hover:underline text-sm"
+        className="text-ai-orange hover:underline text-sm"
       >
         Go Home
       </Link>

@@ -9,6 +9,7 @@ import ChatRoomList from "./ChatRoomList";
 import { useSession } from "next-auth/react";
 import ChatRoomListSkeleton from "./ChatRoomListSkeleton";
 import NewChatButton from "../common/NewChatButton";
+import { Info } from "lucide-react";
 
 interface SidebarProps {
   closeDrawer?: () => void;
@@ -48,24 +49,27 @@ export default function Sidebar({ closeDrawer, isDrawer }: SidebarProps) {
         >
           <Menu size={16} />
         </Button>
-        <Link
-          href="/search"
-          title="Search"
-          className={cn(
-            "p-2 rounded-md hover:bg-zinc-400/20 transition-colors"
-          )}
-          onNavigate={() => handleNav()}
-        >
-          <Search size={16} />
-        </Link>
       </div>
 
       <div
         className={cn(
-          "flex items-center px-2",
+          "flex flex-col gap-2 items-center px-2",
           collapsed ? "justify-center " : "justify-between"
         )}
       >
+        <Link
+          href="/search"
+          title="Search"
+          className={cn(
+            "w-full hover:!bg-zinc-400/20 cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md",
+            collapsed ? "justify-center " : "justify-start"
+          )}
+          onNavigate={() => handleNav()}
+        >
+          <Search size={16} />
+          <span className={cn("text-sm font-medium", collapsed && "hidden")}>Search</span>
+        </Link>
+
         <NewChatButton
           variant="ghost"
           className={cn(
@@ -75,16 +79,20 @@ export default function Sidebar({ closeDrawer, isDrawer }: SidebarProps) {
           onSuccess={() => closeDrawer?.()}
         >
           <SquarePen />
-          <span className={cn("", collapsed && "hidden")}>New Chat</span>
+          <span className={cn("!text-sm", collapsed && "hidden")}>New Chat</span>
         </NewChatButton>
       </div>
+
       <div
         id="chatroom-scrollable"
-        className="flex-1 overflow-y-auto p-2"
+        className={cn(
+          "flex-1  p-2",
+          collapsed ? "overscroll-none" : "overflow-y-auto"
+        )}
         style={{ minHeight: 0 }}
       >
         {isAuthLoading ? (
-          <ChatRoomListSkeleton count={8} />
+          <ChatRoomListSkeleton count={12} />
         ) : isAuthed ? (
           <div
             className={cn(
@@ -122,6 +130,17 @@ export default function Sidebar({ closeDrawer, isDrawer }: SidebarProps) {
         )}
       >
         <ModeToggle />
+        <Link
+          href="/about"
+          title="About AI"
+          className={cn(
+            "p-2 rounded-md transition-colors flex items-center gap-1 underline",
+            collapsed && "hidden"
+          )}
+          onNavigate={() => handleNav()}
+        >
+          <span className={"font-medium text-xs sm:text-sm"}>About AI</span>
+        </Link>
       </div>
     </aside>
   );

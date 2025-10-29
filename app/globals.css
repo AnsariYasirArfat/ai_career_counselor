@@ -43,7 +43,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 
    /* Custom color */
-   --color-oration-orange: #e33414; 
+   --color-ai-orange: #e33414; 
 }
 
 :root {

@@ -23,7 +23,6 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { CHAT_SESSIONS_PER_PAGE } from "@/constant/pageLimits";
 
-
 export default function ChatRoomList({
   onRoomClick,
 }: {
@@ -129,8 +128,6 @@ export default function ChatRoomList({
     }
   }, [editingId]);
 
-
-
   // Auto-fetch until the scroll container is actually scrollable (or no more pages)
   useEffect(() => {
     const el = document.getElementById("chatroom-scrollable");
@@ -138,11 +135,14 @@ export default function ChatRoomList({
 
     // If content height <= container height, there is nothing to scroll,
     // so fetch the next page (if available). This effect will re-run after data updates.
-    if (hasNextPage && !isFetchingNextPage && el.scrollHeight <= el.clientHeight) {
+    if (
+      hasNextPage &&
+      !isFetchingNextPage &&
+      el.scrollHeight <= el.clientHeight
+    ) {
       fetchNextPage();
     }
   }, [sessions.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
-
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) =>
@@ -187,7 +187,7 @@ export default function ChatRoomList({
   };
 
   if (status === "pending" && !data) {
-    return <ChatRoomListSkeleton count={8} />;
+    return <ChatRoomListSkeleton count={12} />;
   }
 
   return (
@@ -198,13 +198,7 @@ export default function ChatRoomList({
         dataLength={sessions.length}
         next={fetchNextPage}
         hasMore={!!hasNextPage}
-        loader={
-          isFetchingNextPage && (
-            <div className="flex justify-center py-2">
-              <Loader2 className="w-8 h-5 animate-spin text-neutral-500" />
-            </div>
-          )
-        }
+        loader={isFetchingNextPage && <ChatRoomListSkeleton count={3} />}
         scrollThreshold="0.9"
         scrollableTarget="chatroom-scrollable"
         style={{ overflow: "visible" }}

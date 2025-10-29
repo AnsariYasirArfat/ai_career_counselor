@@ -18,10 +18,10 @@ export default function TypingIndicator({
   return (
     <div className="flex items-center gap-2 py-2">
       <Image
-        src={"/oration_logo.png"}
+        src={"/logo.png"}
         width={30}
         height={30}
-        alt="oration_logo"
+        alt="logo"
       />
       <span className="text-sm text-gray-400 font-medium">
         {text}
