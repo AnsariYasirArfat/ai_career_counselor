@@ -24,7 +24,7 @@ export const metadata: Metadata = {
       "A private, conversational AI that helps you make confident career decisions.",
     images: [
       {
-        url: "/screenshots/AI-Career-Counselor.png",
+        url: "/screenshots/main_page_dark.png",
         width: 1200,
         height: 630,
         alt: "GuideLane AI overview",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     title: "About GuideLane AI – AI Career Counselor",
     description:
       "Private, conversational AI for your career choices and growth.",
-    images: ["/screenshots/AI-Career-Counselor.png"],
+    images: ["/screenshots/main_page_dark.png"],
   },
 };
 
@@ -129,22 +129,28 @@ export default async function AboutPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[
             {
-              src: "/screenshots/AI-Career-Counselor.png",
+              src: "/screenshots/main_page_dark.png",
               alt: "GuideLane AI overview (dark)",
             },
             {
-              src: "/screenshots/AI-Career-Counselor-light.png",
+              src: "/screenshots/main_page_light.png",
               alt: "GuideLane AI overview (light)",
             },
             {
-              src: "/screenshots/chat_light.png",
-              alt: "GuideLane AI conversation view",
+              src: "/screenshots/chat_dark.png",
+              alt: "GuideLane AI conversation dark view",
             },
-            { src: "/screenshots/login.png", alt: "GuideLane AI sign-in" },
-            { src: "/screenshots/register.png", alt: "GuideLane AI sign-up" },
+            {
+              src: "/screenshots/chat_light.png",
+              alt: "GuideLane AI conversation light view",
+            },
             {
               src: "/screenshots/search.png",
               alt: "GuideLane AI search chats",
+            },
+            {
+              src: "/screenshots/edit_title.png",
+              alt: "Edit title feature",
             },
           ].map((img) => (
             <div

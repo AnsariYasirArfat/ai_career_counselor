@@ -39,14 +39,14 @@ export const metadata: Metadata = {
     title: "GuideLane AI – AI Career Counselor",
     description:
       "Private, conversational career guidance to explore paths, plan growth, and decide with confidence.",
-    images: [{ url: "/screenshots/AI-Career-Counselor.png", width: 1200, height: 630, alt: "GuideLane AI overview" }],
+    images: [{ url: "/screenshots/main_page_dark.png", width: 1200, height: 630, alt: "GuideLane AI overview" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "GuideLane AI – AI Career Counselor",
     description:
       "Private, conversational AI for career guidance and growth planning.",
-    images: ["/screenshots/AI-Career-Counselor.png"],
+    images: ["/screenshots/main_page_dark.png"],
   },
   icons: {
     icon: "/favicon.ico",

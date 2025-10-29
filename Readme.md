@@ -92,13 +92,15 @@ AUTH_GOOGLE_SECRET="your_google_client_secret"
 ```
 
 ## Screenshots
-![Desktop Image ](/public/screenshots/AI-Career-Counselor.png)
-![Desktop Image Light](/public/screenshots/AI-Career-Counselor-light.png)
-![Registration](/public/screenshots/register.png)
-![Login](/public/screenshots/login.png)
+![Desktop Main Dark](/public/screenshots/main_page_dark.png)
+![Desktop Main Light](/public/screenshots/main_page_light.png)
+![Chat Room](/public/screenshots/chat_dark.png)
 ![Chat Room](/public/screenshots/chat_light.png)
 ![Edit Title](/public/screenshots/edit_title.png)
 ![Search Chats](/public/screenshots/search.png)
+![About Page](/public/screenshots/about.png)
+![Registration](/public/screenshots/register.png)
+![Login](/public/screenshots/login.png)
 
 
 ### Database Setup:
